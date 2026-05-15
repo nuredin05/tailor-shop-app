@@ -3,15 +3,17 @@ const dotenv = require('dotenv');
 const User = require('../models/User');
 const connectDB = require('../config/db');
 
-// Load env vars
-dotenv.config();
+const path = require('path');
+
+// Load env vars from the parent directory
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const seedSuperAdmin = async () => {
   try {
     await connectDB();
 
     const email = 'superadmin@example.com';
-    const password = 'superpassword123'; // The User model will hash this in pre-save hook
+    const password = '123456'; // The User model will hash this in pre-save hook
 
     const adminExists = await User.findOne({ role: 'superadmin' });
 

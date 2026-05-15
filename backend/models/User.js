@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
     phone: {
-      type: String,
+      type: Number,
+      required: [true, 'phone is required'],
       trim: true
     },
     address: {
@@ -35,8 +36,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin', 'superadmin', 'student', 'teacher'],
-      default: 'user'
+      enum: ['customer', 'admin', 'officer', 'manager', 'cutter'],
+      default: 'customer'
     },
     status: {
       type: String,
