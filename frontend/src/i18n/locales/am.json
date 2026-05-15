@@ -1,0 +1,26 @@
+{
+  "login": {
+    "title": "ግባ",
+    "subtitle": "ወደ ጤናማ ዳሽቦርድ ተደርስ",
+    "email": "ኢሜይል አድራሻ",
+    "emailPlaceholder": "admin@example.com",
+    "password": "ይለፍ ቃል",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "ግባ",
+    "forgot": "ረስተው ነው?",
+    "noAccount": "መለያ የላዎት?",
+    "register": "እዚህ ምዝገባ ያድርጉ",
+    "error": "ወጥ ያልሆነ ኢሜይል ወይም ይለፍ ቃል",
+    "loading": "በመጫን ላይ ይገኛል..."
+  },
+  "language": {
+    "select": "ቋንቋ ይምረጡ",
+    "english": "En",
+    "amharic": "አማ"
+  },
+  "settings": {
+    "darkMode": "ጨለማ ሞድ",
+    "lightMode": "ብርሃን ሞድ",
+    "systemSync": "ሲስተም ማመጣጠን"
+  }
+}

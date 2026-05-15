@@ -1,0 +1,26 @@
+{
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Access your secure dashboard",
+    "email": "Email Address",
+    "emailPlaceholder": "admin@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Sign In",
+    "forgot": "Forgot?",
+    "noAccount": "Don't have an account?",
+    "register": "Register here",
+    "error": "Invalid email or password",
+    "loading": "Signing in..."
+  },
+  "language": {
+    "select": "Select Language",
+    "english": "En",
+    "amharic": "አማ"
+  },
+  "settings": {
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "systemSync": "System Sync"
+  }
+}
