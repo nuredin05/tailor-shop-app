@@ -13,6 +13,10 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import AdminRoute from './components/AdminRoute'
 import Chatbot from './components/Chatbot'
+import RoleRoute from './components/RoleRoute'
+import CustomersPage from './pages/CustomersPage'
+import PricingPage from './pages/PricingPage'
+import ExpensesPage from './pages/ExpensesPage'
 
 function App() {
   return (
@@ -48,6 +52,44 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CustomersPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/pricing"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['manager', 'admin', 'superadmin']}>
+                  <Layout>
+                    <PricingPage />
+                  </Layout>
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['manager', 'admin', 'superadmin']}>
+                  <Layout>
+                    <ExpensesPage />
+                  </Layout>
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+
 
           {/* Placeholder Routes for Regular Users */}
           {['register-student', 'students', 'review-incidents', 'rewards', 'school-structure'].map(path => (

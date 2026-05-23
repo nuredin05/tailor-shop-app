@@ -31,7 +31,7 @@ const Layout = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -109,14 +109,16 @@ const Layout = ({ children }) => {
   };
 
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'user', 'superadmin'] },
-    { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['admin', 'superadmin'] },
-    { name: 'Users', icon: Users, path: '/users', roles: ['admin', 'superadmin'] },
-    { name: 'Settings', icon: Settings, path: '/settings', roles: ['admin', 'user', 'superadmin'] }
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] },
+    { name: 'Customers', icon: Users, path: '/customers', roles: ['admin', 'superadmin', 'manager', 'officer'] },
+    { name: 'Pricing', icon: ClipboardList, path: '/pricing', roles: ['admin', 'superadmin', 'manager'] },
+    { name: 'Costs & Payroll', icon: BarChart3, path: '/expenses', roles: ['admin', 'superadmin', 'manager'] },
+    { name: 'Settings', icon: Settings, path: '/settings', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] }
   ];
 
   const userRole = user?.role || 'user';
   const filteredNav = navItems.filter(item => item.roles.includes(userRole));
+
 
   return (
     <div className="flex h-screen w-full bg-backgroundClr text-primaryClr overflow-hidden" onClick={() => setShowNotifications(false)}>
@@ -131,7 +133,7 @@ const Layout = ({ children }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-72 bg-primaryClr/40 border-r border-primaryClr/5 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-60'} w-60 bg-primaryClr/40 border-r border-primaryClr/5 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
         onClick={e => e.stopPropagation()}
       >
         <div className={`p-6 relative flex flex-col h-full ${isSidebarCollapsed ? 'items-center' : ''}`}>
@@ -150,8 +152,8 @@ const Layout = ({ children }) => {
             {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
 
-          <div 
-            className={`flex items-center gap-3 px-2 mb-10 cursor-pointer transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'justify-center p-0' : ''}`} 
+          <div
+            className={`flex items-center gap-3 px-2 mb-10 cursor-pointer transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'justify-center p-0' : ''}`}
             onClick={() => navigate('/dashboard')}
           >
             <div className="w-10 h-10 flex items-center justify-center shrink-0 text-primaryClr">

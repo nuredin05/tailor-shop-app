@@ -17,9 +17,14 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
     phone: {
-      type: Number,
-      required: [true, 'phone is required'],
+      type: String, // Changed from Number to String to preserve leading zeros/country codes
+      required: [true, 'Phone is required'],
       trim: true
+    },
+    role: {
+      type: String,
+      enum: ['customer', 'admin', 'officer', 'manager', 'cutter', 'tailor'], // Added 'tailor'
+      default: 'customer'
     },
     address: {
       type: String,
@@ -34,11 +39,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
-    role: {
-      type: String,
-      enum: ['customer', 'admin', 'officer', 'manager', 'cutter'],
-      default: 'customer'
-    },
+
     status: {
       type: String,
       enum: ['active', 'deactivated'],

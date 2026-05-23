@@ -15,7 +15,7 @@ const {
   createUser,
   updateUserStatus 
 } = require('../controllers/authController')
-const { protect, admin } = require('../middleware/authMiddleware')
+const { protect, admin, manager } = require('../middleware/authMiddleware')
 
 // Configure Multer Storage
 const storage = multer.diskStorage({
@@ -50,8 +50,8 @@ router.post('/reset-password', resetPassword)
 router.get('/profile', protect, getUserProfile)
 router.put('/profile', protect, upload.single('profileImage'), updateUserProfile)
 
-// Admin Routes
-router.get('/users', protect, admin, getAllUsers)
+// Admin/Manager Routes
+router.get('/users', protect, manager, getAllUsers)
 router.post('/users', protect, admin, createUser)
 router.delete('/users/:id', protect, admin, deleteUser)
 router.put('/users/:id/role', protect, admin, updateUserRole)

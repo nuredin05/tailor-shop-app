@@ -3,6 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import AdminDashboard from '../components/dashboard/AdminDashboard';
 import UserDashboard from '../components/dashboard/UserDashboard';
 import SuperAdminDashboard from '../components/dashboard/SuperAdminDashboard';
+import ManagerDashboard from '../components/dashboard/ManagerDashboard';
+import OfficerDashboard from '../components/dashboard/OfficerDashboard';
+import CutterDashboard from '../components/dashboard/CutterDashboard';
+import TailorDashboard from '../components/dashboard/TailorDashboard';
+import ClientDashboard from '../components/dashboard/ClientDashboard';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -13,6 +18,16 @@ const DashboardPage = () => {
         return <SuperAdminDashboard user={user} />;
       case 'admin':
         return <AdminDashboard user={user} />;
+      case 'manager':
+        return <ManagerDashboard user={user} />;
+      case 'officer':
+        return <OfficerDashboard user={user} />;
+      case 'cutter':
+        return <CutterDashboard user={user} />;
+      case 'tailor':
+        return <TailorDashboard user={user} />;
+      case 'customer':
+        return <ClientDashboard user={user} />;
       default:
         return <UserDashboard user={user} />;
     }
@@ -24,5 +39,6 @@ const DashboardPage = () => {
     </div>
   );
 };
+
 
 export default DashboardPage;

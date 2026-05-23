@@ -28,4 +28,48 @@ const admin = (req, res, next) => {
   }
 }
 
-module.exports = { protect, admin }
+const manager = (req, res, next) => {
+  if (req.user && ['manager', 'admin', 'superadmin'].includes(req.user.role)) {
+    next()
+  } else {
+    res.status(403).json({ message: 'Not authorized as a manager' })
+  }
+}
+
+const officer = (req, res, next) => {
+  if (req.user && ['officer', 'manager', 'admin', 'superadmin'].includes(req.user.role)) {
+    next()
+  } else {
+    res.status(403).json({ message: 'Not authorized as an officer' })
+  }
+}
+
+// Cutter: can only update cutting-stage orders
+const cutter = (req, res, next) => {
+  if (req.user && ['cutter', 'manager', 'admin', 'superadmin'].includes(req.user.role)) {
+    next()
+  } else {
+    res.status(403).json({ message: 'Not authorized as a cutter' })
+  }
+}
+
+// Tailor: can only update sewing-stage orders
+const tailor = (req, res, next) => {
+  if (req.user && ['tailor', 'cutter', 'manager', 'admin', 'superadmin'].includes(req.user.role)) {
+    next()
+  } else {
+    res.status(403).json({ message: 'Not authorized as a tailor' })
+  }
+}
+
+// shopStaff: any production role (cutter, tailor, officer, manager, admin)
+const shopStaff = (req, res, next) => {
+  if (req.user && ['cutter', 'tailor', 'officer', 'manager', 'admin', 'superadmin'].includes(req.user.role)) {
+    next()
+  } else {
+    res.status(403).json({ message: 'Not authorized as shop staff' })
+  }
+}
+
+module.exports = { protect, admin, manager, officer, cutter, tailor, shopStaff }
+

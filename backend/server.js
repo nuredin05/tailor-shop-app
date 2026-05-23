@@ -8,6 +8,10 @@ const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const notificationRoutes = require('./routes/notificationRoutes')
 const chatRoutes = require('./routes/chatRoutes')
+const customerRoutes = require('./routes/customerRoutes')
+const orderRoutes = require('./routes/orderRoutes')
+const pricingRoutes = require('./routes/pricingRoutes')
+const expenseRoutes = require('./routes/expenseRoutes')
 
 connectDB()
 
@@ -32,6 +36,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 app.use('/api/auth', authRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/chat', chatRoutes)
+app.use('/api/customers', customerRoutes)
+app.use('/api/orders', orderRoutes)
+app.use('/api/pricing', pricingRoutes)
+app.use('/api/expenses', expenseRoutes)
+
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'API is running...' }))
