@@ -107,7 +107,7 @@ const TailorDashboard = ({ user }) => {
             <thead>
               <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
                 <th className="px-6 py-4">Order #</th>
-                <th className="px-6 py-4">Urgency</th>
+                <th className="px-6 py-4">Due Date</th>
                 <th className="px-6 py-4">Garments</th>
                 <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Current Stage</th>
@@ -155,7 +155,7 @@ const TailorDashboard = ({ user }) => {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleOpenStatusModal(order)}
-                        className="px-3 py-1.5 bg-primaryClr text-white hover:opacity-90 text-xs font-bold rounded-lg transition-all shadow-md shadow-primaryClr/20"
+                        className="px-3 py-1.5 bg-primaryClr/10 hover:bg-primaryClr text-primaryClr hover:text-white rounded-lg text-xs font-bold transition-all"
                       >
                         Update Stage
                       </button>

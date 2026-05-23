@@ -9,7 +9,13 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  User,
+  Phone,
+  Tag,
+  Ruler,
+  Layers,
+  Info
 } from 'lucide-react';
 
 const CutterDashboard = ({ user }) => {
@@ -398,35 +404,33 @@ const CutterDashboard = ({ user }) => {
               <tbody className="divide-y divide-secondaryClr/5">
                 {orders.map((order) => (
                   <tr key={order._id} className="hover:bg-secondaryClr/[0.01] transition-colors group">
-                    <td className="px-8 py-5 font-mono text-primaryClr/60 font-medium">
-                      #{order.orderNumber || order._id?.slice(-5).toUpperCase()}
+                    <td className="px-6 py-4 font-bold text-primaryClr">
+                      {order.orderNumber || order._id?.slice(-5).toUpperCase()}
                     </td>
-                    <td className="px-8 py-5 font-semibold text-primaryClr">
-                      {order.customer?.name || 'Walk-in Client'}
+                    <td className="px-6 py-4">
+                      <span className="font-bold text-sm text-secondaryClr text-left">
+                        {order.customer?.name || 'Walk-in Client'}
+                      </span>
                     </td>
-                    <td className="px-8 py-5 space-y-1">
+                    <td className="px-6 py-4 space-y-1">
                       {order.items?.map((item, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-lg mr-2">
-                          {item.itemType} <span className="text-gray-400">x{item.quantity}</span>
+                        <span key={idx} className="inline-flex items-center gap-1.5 bg-secondaryClr/5 text-secondaryClr text-xs font-bold px-2.5 py-1 rounded-lg mr-2">
+                          {item.itemType} <span className="opacity-60">x{item.quantity}</span>
                         </span>
                       ))}
                     </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-1.5 font-medium text-secondaryClr/60 text-sm">
-                        <Clock className="w-4 h-4 opacity-70" />
-                        <span>{new Date(order.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      </div>
+                    <td className="px-6 py-4 text-xs font-semibold text-secondaryClr/70">
+                      {new Date(order.deadline).toLocaleDateString()}
                     </td>
-                    <td className="px-8 py-5">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${order.status === 'cutting'
-                        ? 'bg-amber-50 text-amber-600 border border-amber-200/50'
-                        : 'bg-blue-50 text-blue-600 border border-blue-200/50'
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${order.status === 'cutting'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-blue-100 text-blue-700'
                         }`}>
-                        <span className={`w-2 h-2 rounded-full ${order.status === 'cutting' ? 'bg-amber-500 animate-pulse' : 'bg-blue-400'}`} />
                         {order.status === 'cutting' ? 'Cutting Table' : 'In Queue'}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-6 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="outline"
@@ -439,7 +443,7 @@ const CutterDashboard = ({ user }) => {
                             });
                             setActiveItemIndex(0);
                           }}
-                          className="p-2 rounded-xl border-secondaryClr/20 hover:bg-primaryClr hover:text-white transition-all duration-300"
+                          className="px-2.5 py-1.5 border border-secondaryClr/10 hover:bg-secondaryClr/5 text-secondaryClr rounded-lg transition-all"
                           title="View CAD Layout"
                         >
                           <Maximize2 className="w-4 h-4" />
@@ -447,7 +451,7 @@ const CutterDashboard = ({ user }) => {
                         <Button
                           size="sm"
                           onClick={() => handleOpenStatusModal(order)}
-                          className={`p-2 rounded-xl transition-all duration-300 ${order.status === 'cutting'
+                          className={`px-2.5 py-1.5 rounded-lg transition-all ${order.status === 'cutting'
                             ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
                             : 'bg-primaryClr hover:bg-primaryClr/90 text-white'
                             }`}
@@ -478,6 +482,48 @@ const CutterDashboard = ({ user }) => {
         >
           <div className="space-y-4 py-2">
 
+            {/* Order & Client Summary Header */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-primaryClr/3 border border-primaryClr/10 rounded-2xl p-4">
+              <div className="flex items-start gap-2">
+                <User className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Client</p>
+                  <p className="text-sm font-bold text-primaryClr">{selectedCustomer.name || '—'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Phone className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Phone</p>
+                  <p className="text-sm font-bold text-secondaryClr">{selectedCustomer.phone || '—'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Layers className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Total Items</p>
+                  <p className="text-sm font-bold text-secondaryClr">{selectedCustomer.items?.length || 1} Garment{selectedCustomer.items?.length > 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Tag className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Active Pattern</p>
+                  <p className="text-sm font-bold text-amber-600">{selectedCustomer.items?.[activeItemIndex]?.itemType || '—'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Per-item notes from officer */}
+            {selectedCustomer.items?.[activeItemIndex]?.notes && (
+              <div className="flex items-start gap-2.5 bg-blue-50/60 border border-blue-200/50 rounded-xl px-4 py-3">
+                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-800 font-medium leading-relaxed">
+                  <span className="font-bold">Item Notes: </span>{selectedCustomer.items?.[activeItemIndex]?.notes}
+                </p>
+              </div>
+            )}
+
             {/* Multi-item Toggle Ribbon within a single order booking */}
             {selectedCustomer.items?.length > 1 && (
               <div className="flex gap-2 bg-gray-50/80 p-1.5 rounded-xl w-fit border border-gray-200/50">
@@ -505,10 +551,14 @@ const CutterDashboard = ({ user }) => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-slate-300 font-bold">TYPE: {selectedCustomer.items?.[activeItemIndex]?.itemType.toUpperCase()}</span>
+                  <span className="text-slate-300 font-bold">PATTERN: {selectedCustomer.items?.[activeItemIndex]?.itemType?.toUpperCase()}</span>
                 </div>
                 <div className="hidden sm:block text-slate-600">|</div>
-                <div className="hidden sm:block text-slate-500">ENGINE MATRIX: ACTIVE PLOTTER</div>
+                <span className="hidden sm:block text-slate-500">QTY: {selectedCustomer.items?.[activeItemIndex]?.quantity || 1} PC</span>
+                <div className="hidden sm:block text-slate-600">|</div>
+                <span className="hidden sm:block text-slate-500">SCALE: 7px/in</span>
+                <div className="hidden sm:block text-slate-600">|</div>
+                <span className="hidden md:block text-emerald-400 font-bold">● MATRIX ACTIVE</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -518,11 +568,11 @@ const CutterDashboard = ({ user }) => {
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer hover:text-white transition">
                   <input type="checkbox" checked={showSeams} onChange={() => setShowSeams(!showSeams)} className="rounded bg-slate-900 border-slate-700 text-blue-500 focus:ring-0 w-3.5 h-3.5" />
-                  <span>Seam Allowance</span>
+                  <span>Seams</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer hover:text-white transition">
                   <input type="checkbox" checked={showAnnotations} onChange={() => setShowAnnotations(!showAnnotations)} className="rounded bg-slate-900 border-slate-700 text-blue-500 focus:ring-0 w-3.5 h-3.5" />
-                  <span>Markers</span>
+                  <span>Annotations</span>
                 </label>
               </div>
             </div>
@@ -675,16 +725,47 @@ const CutterDashboard = ({ user }) => {
                 </div>
 
                 <div className="text-[9px] font-mono text-slate-500 bg-slate-950/90 p-2.5 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row justify-between items-center gap-2">
-                  <span>FRAME RATE MATRIX CALIBRATION: ONLINE GRAPH TRACE</span>
-                  <button type="button" onClick={() => window.print()} className="text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider transition">
-                    Print Plotter Scale Blueprint
+                  <div className="flex items-center gap-4">
+                    <span className="text-slate-600">SCALE: 1in = 7px</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="text-slate-600">UNIT: inches</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="text-slate-400">PATTERN: {selectedCustomer.items?.[activeItemIndex]?.itemType?.toUpperCase()}</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="text-emerald-500">● SEAM ALLOWANCE: {showSeams ? 'ON' : 'OFF'}</span>
+                  </div>
+                  <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider transition">
+                    <span>⎙</span> Print Blueprint
                   </button>
                 </div>
               </div>
 
             </div>
 
-            <div className="pt-4 flex justify-end gap-2 border-t border-secondaryClr/5">
+            {/* Measurement Summary Table */}
+            <div className="border border-secondaryClr/10 rounded-2xl overflow-hidden">
+              <div className="bg-secondaryClr/5 px-4 py-2.5 flex items-center gap-2">
+                <Ruler className="w-3.5 h-3.5 text-primaryClr/60" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/50">Full Measurement Spec Sheet</span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 divide-x divide-secondaryClr/5">
+                {Object.entries(selectedCustomer.measurements || {}).map(([key, val]) => {
+                  const v = parseFloat(val);
+                  if (!v) return null;
+                  return (
+                    <div key={key} className="px-3 py-2.5 text-center">
+                      <p className="text-[9px] uppercase font-bold tracking-widest text-secondaryClr/40 mb-0.5">{key.replace('_', ' ')}</p>
+                      <p className="text-sm font-black text-primaryClr">{v}"</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-between items-center gap-2 border-t border-secondaryClr/5">
+              <p className="text-xs text-secondaryClr/40 font-mono">
+                Generated: {new Date().toLocaleString()} · Client: {selectedCustomer.name}
+              </p>
               <Button variant="outline" onClick={() => { setSelectedCustomer(null); setHoveredMeasurement(null); }}>
                 Close Blueprint Panel
               </Button>
