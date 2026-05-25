@@ -112,6 +112,7 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] },
     { name: 'Customers', icon: Users, path: '/customers', roles: ['admin', 'superadmin', 'manager', 'officer'] },
     { name: 'Pricing', icon: ClipboardList, path: '/pricing', roles: ['admin', 'superadmin', 'manager'] },
+    { name: 'Users', icon: Users, path: '/user', roles: ['admin', 'superadmin', 'manager'] },
     { name: 'Costs & Payroll', icon: BarChart3, path: '/expenses', roles: ['admin', 'superadmin', 'manager'] },
     { name: 'Settings', icon: Settings, path: '/settings', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] }
   ];
