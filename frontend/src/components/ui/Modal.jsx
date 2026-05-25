@@ -19,7 +19,8 @@ const Modal = ({
         md: 'max-w-lg',
         lg: 'max-w-2xl',
         xl: 'max-w-5xl',
-        full: 'max-w-full mx-4'
+        '5xl': 'max-w-7xl',
+        full: 'max-w-[85vw]'
     };
 
     const handleBackdropClick = (e) => {
@@ -30,7 +31,7 @@ const Modal = ({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondaryClr bg-opacity-50 overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primaryClr bg-opacity-50 overflow-y-auto"
             onClick={handleBackdropClick}
         >
             <div className={`w-full ${sizeClasses[size]} bg-backgroundClr rounded-2xl shadow-2xl transform transition-all flex flex-col max-h-[90vh]`}>

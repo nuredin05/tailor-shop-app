@@ -52,9 +52,9 @@ router.put('/profile', protect, upload.single('profileImage'), updateUserProfile
 
 // Admin/Manager Routes
 router.get('/users', protect, manager, getAllUsers)
-router.post('/users', protect, admin, createUser)
-router.delete('/users/:id', protect, admin, deleteUser)
-router.put('/users/:id/role', protect, admin, updateUserRole)
-router.put('/users/:id/status', protect, admin, updateUserStatus)
+router.post('/users', protect, manager, createUser)
+router.delete('/users/:id', protect, admin, deleteUser) // Only admin can delete
+router.put('/users/:id/role', protect, manager, updateUserRole)
+router.put('/users/:id/status', protect, manager, updateUserStatus)
 
 module.exports = router

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { toast } from 'react-hot-toast';
 import Card from '../ui/Card';
 import { Button } from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -21,7 +22,7 @@ import {
   Ruler
 } from 'lucide-react';
 
-const OfficerDashboard = ({ user }) => {
+const OfficerDashboard = ({ user, hideHeader = false }) => {
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [pricings, setPricings] = useState([]);
@@ -34,11 +35,18 @@ const OfficerDashboard = ({ user }) => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
   
   // Creating client state
+  const initialMeasurements = {
+    chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0,
+    fullLengthBack: 0, fullLengthFront: 0, acrossChest: 0, acrossShoulder: 0, shoulderLength: 0, centerLength: 0, shoulderSlope: 0, acrossBack: 0, backNeck: 0,
+    pantLength: 0, crotchDepth: 0, hipDepth: 0, waistArcFront: 0, waistArcBack: 0, hipArcFront: 0, hipArcBack: 0,
+    bicep: 0, capHeight: 0
+  };
+
   const [clientForm, setClientForm] = useState({
-    name: '', email: '', phone: '', address: '',
-    chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0
+    name: '', email: '', phone: '', address: '', ...initialMeasurements
   });
   
   // Creating order state
@@ -99,14 +107,14 @@ const OfficerDashboard = ({ user }) => {
         phone: clientForm.phone,
         address: clientForm.address,
         measurements: {
-          chest: Number(clientForm.chest),
-          waist: Number(clientForm.waist),
-          hips: Number(clientForm.hips),
-          shoulder: Number(clientForm.shoulder),
-          sleeves: Number(clientForm.sleeves),
-          inseam: Number(clientForm.inseam),
-          neck: Number(clientForm.neck),
-          length: Number(clientForm.length)
+          chest: Number(clientForm.chest), waist: Number(clientForm.waist), hips: Number(clientForm.hips), shoulder: Number(clientForm.shoulder),
+          sleeves: Number(clientForm.sleeves), inseam: Number(clientForm.inseam), neck: Number(clientForm.neck), length: Number(clientForm.length),
+          fullLengthBack: Number(clientForm.fullLengthBack), fullLengthFront: Number(clientForm.fullLengthFront), acrossChest: Number(clientForm.acrossChest),
+          acrossShoulder: Number(clientForm.acrossShoulder), shoulderLength: Number(clientForm.shoulderLength), centerLength: Number(clientForm.centerLength),
+          shoulderSlope: Number(clientForm.shoulderSlope), acrossBack: Number(clientForm.acrossBack), backNeck: Number(clientForm.backNeck),
+          pantLength: Number(clientForm.pantLength), crotchDepth: Number(clientForm.crotchDepth), hipDepth: Number(clientForm.hipDepth),
+          waistArcFront: Number(clientForm.waistArcFront), waistArcBack: Number(clientForm.waistArcBack), hipArcFront: Number(clientForm.hipArcFront), hipArcBack: Number(clientForm.hipArcBack),
+          bicep: Number(clientForm.bicep), capHeight: Number(clientForm.capHeight)
         }
       };
 
@@ -114,13 +122,12 @@ const OfficerDashboard = ({ user }) => {
       setCustomers([res.data, ...customers]);
       setIsClientModalOpen(false);
       setClientForm({
-        name: '', email: '', phone: '', address: '',
-        chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0
+        name: '', email: '', phone: '', address: '', ...initialMeasurements
       });
-      alert('Client profile created successfully!');
+      toast.success('Client profile created successfully!');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to create client');
+      toast.error(err.response?.data?.message || 'Failed to create client');
     }
   };
 
@@ -158,7 +165,7 @@ const OfficerDashboard = ({ user }) => {
   const handleCreateOrderSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCustomerId || orderItems.some(i => !i.itemType)) {
-      alert('Please select customer and item types');
+      toast.error('Please select customer and item types');
       return;
     }
 
@@ -188,10 +195,10 @@ const OfficerDashboard = ({ user }) => {
       setInitialPayment(0);
       setPaymentMethod('cash');
       
-      alert('Order created successfully!');
+      toast.success('Order created successfully!');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to create order');
+      toast.error(err.response?.data?.message || 'Failed to create order');
     }
   };
 
@@ -232,9 +239,10 @@ const OfficerDashboard = ({ user }) => {
 
       setIsPaymentModalOpen(false);
       setIsReceiptModalOpen(true);
+      toast.success('Payment processed successfully');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to process payment');
+      toast.error(err.response?.data?.message || 'Failed to process payment');
     }
   };
 
@@ -256,9 +264,27 @@ const OfficerDashboard = ({ user }) => {
       setOrders(orders.map(o => o._id === res.data._id ? res.data : o));
       setIsStatusModalOpen(false);
       setStatusToUpdate(null);
+      toast.success('Order status updated successfully');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to update order status');
+      toast.error(err.response?.data?.message || 'Failed to update order status');
+    }
+  };
+
+  const confirmDeleteOrder = (orderId) => {
+    setOrderToDelete(orderId);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    try {
+      await api.delete(`/orders/${orderToDelete}`);
+      setOrders(orders.filter(o => o._id !== orderToDelete));
+      setOrderToDelete(null);
+      toast.success('Order deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to delete order');
     }
   };
 
@@ -313,36 +339,61 @@ const OfficerDashboard = ({ user }) => {
 
   return (
     <div className="space-y-8 animate-fadeInUp">
-      {/* Welcome Header */}
-      <div className="bg-primaryClr/5 p-6 rounded-3xl border border-primaryClr/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primaryClr text-white flex items-center justify-center shadow-lg shadow-primaryClr/20">
-            <FileText size={24} />
+      {/* Welcome Header or Quick Actions for Manager */}
+      {!hideHeader ? (
+        <div className="bg-primaryClr/5 p-6 rounded-3xl border border-primaryClr/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primaryClr text-white flex items-center justify-center shadow-lg shadow-primaryClr/20">
+              <FileText size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-primaryClr">Officer Desk: Welcome, {user?.name}!</h1>
+              <p className="text-sm text-primaryClr/60">Registering new clients, orders, status updates, and payments receipt.</p>
+            </div>
           </div>
+          
+          {/* Quick Actions */}
+          <div className="flex gap-2 self-start md:self-auto">
+            <button 
+              onClick={() => setIsClientModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primaryClr/20 text-primaryClr hover:bg-primaryClr/5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              <UserPlus size={14} />
+              Create Client
+            </button>
+            <button 
+              onClick={() => setIsOrderModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primaryClr text-white hover:opacity-90 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-primaryClr/15"
+            >
+              <Plus size={14} />
+              New Order
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-secondaryClr/10">
           <div>
-            <h1 className="text-xl font-bold text-primaryClr">Officer Desk: Welcome, {user?.name}!</h1>
-            <p className="text-sm text-primaryClr/60">Registering new clients, orders, status updates, and payments receipt.</p>
+            <h2 className="text-lg font-bold text-primaryClr">Order & Client Management Actions</h2>
+            <p className="text-xs text-secondaryClr/50">Full access to create, update, and process payments for shop orders.</p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setIsClientModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primaryClr/20 text-primaryClr hover:bg-primaryClr/5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              <UserPlus size={14} />
+              Create Client
+            </button>
+            <button 
+              onClick={() => setIsOrderModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primaryClr text-white hover:opacity-90 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-primaryClr/15"
+            >
+              <Plus size={14} />
+              New Order
+            </button>
           </div>
         </div>
-        
-        {/* Quick Actions */}
-        <div className="flex gap-2 self-start md:self-auto">
-          <button 
-            onClick={() => setIsClientModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primaryClr/20 text-primaryClr hover:bg-primaryClr/5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
-          >
-            <UserPlus size={14} />
-            Create Client
-          </button>
-          <button 
-            onClick={() => setIsOrderModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primaryClr text-white hover:opacity-90 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-primaryClr/15"
-          >
-            <Plus size={14} />
-            New Order
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Customer Lookup Search Panel */}
       <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-primaryClr/5">
@@ -434,6 +485,15 @@ const OfficerDashboard = ({ user }) => {
                               Collect {rem} Birr
                             </button>
                           )}
+                          {user?.role === 'manager' && (
+                            <button
+                              onClick={() => confirmDeleteOrder(order._id)}
+                              className="px-2.5 py-1.5 border border-red-200 bg-red-50 hover:bg-red-500 hover:text-white text-red-600 text-xs font-bold rounded-lg transition-all"
+                              title="Delete Order"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -463,14 +523,38 @@ const OfficerDashboard = ({ user }) => {
             </div>
             
             <div className="py-6">
-              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/60 mb-4">Tailoring Measurements (inches)</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {Object.entries(previewCustomer.measurements || {}).map(([key, val]) => (
-                  <div key={key} className="bg-backgroundClr/30 p-3 rounded-2xl border border-secondaryClr/5 text-center">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">{key}</span>
-                    <p className="text-lg font-black text-primaryClr mt-0.5">{val}"</p>
-                  </div>
-                ))}
+              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/60 mb-4">Tailoring Measurements (cm)</h4>
+              <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4">
+                {[
+                  { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
+                  { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
+                  { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
+                  { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+                ].map(group => {
+                  const groupMeasurements = group.keys.reduce((acc, k) => {
+                    const val = previewCustomer.measurements?.[k];
+                    if (val) acc[k] = val;
+                    return acc;
+                  }, {});
+                  
+                  if (Object.keys(groupMeasurements).length === 0) return null;
+                  
+                  return (
+                    <div key={group.title}>
+                      <h5 className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 mb-2">{group.title}</h5>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {Object.entries(groupMeasurements).map(([key, val]) => (
+                          <div key={key} className="bg-backgroundClr/30 p-3 rounded-2xl border border-secondaryClr/5 text-center">
+                            <span className="text-[9px] uppercase font-black tracking-wider text-secondaryClr/40 truncate block w-full" title={key.replace(/([A-Z])/g, ' $1').trim()}>
+                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                            <p className="text-lg font-black text-primaryClr mt-0.5">{val}"</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <p className="text-xs text-secondaryClr/50 mt-6 italic">Address: {previewCustomer.address || 'Not registered'}</p>
             </div>
@@ -523,7 +607,7 @@ const OfficerDashboard = ({ user }) => {
 
           <div className="border-t border-secondaryClr/10 pt-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/50">Custom Measurements (inches)</h4>
+              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/50">Custom Measurements (cm)</h4>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black text-secondaryClr/40 uppercase tracking-widest">Garment Type:</span>
                 <select
@@ -541,33 +625,51 @@ const OfficerDashboard = ({ user }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length']
-                .filter(key => {
+            <div className="max-h-[40vh] overflow-y-auto pr-2 space-y-4 pb-4">
+              {[
+                { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
+                { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
+                { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
+                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+              ].map(group => {
+                const visibleKeys = group.keys.filter(key => {
                   if (selectedGarmentType === 'All') return true;
                   const mapping = {
-                    Suit: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'neck', 'length'],
-                    Shirt: ['chest', 'shoulder', 'sleeves', 'neck', 'length'],
-                    Trousers: ['waist', 'hips', 'inseam', 'length'],
+                    Suit: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'neck', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack', 'bicep', 'capHeight'],
+                    Shirt: ['chest', 'shoulder', 'sleeves', 'neck', 'length', 'fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'],
+                    Trousers: ['waist', 'hips', 'inseam', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'],
                     Dress: ['chest', 'waist', 'hips', 'shoulder', 'length'],
-                    Coat: ['chest', 'waist', 'shoulder', 'sleeves', 'length']
+                    Coat: ['chest', 'waist', 'shoulder', 'sleeves', 'length', 'bicep', 'capHeight']
                   };
                   return mapping[selectedGarmentType]?.includes(key);
-                })
-                .map(key => (
-                  <div key={key}>
-                    <label className="block text-[10px] font-black text-secondaryClr/40 uppercase tracking-widest mb-1">{key}</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder="0.0"
-                      className="w-full bg-primaryClr/5 border-0 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
-                      value={clientForm[key]}
-                      onChange={(e) => setClientForm({ ...clientForm, [key]: e.target.value })}
-                    />
+                });
+
+                if (visibleKeys.length === 0) return null;
+
+                return (
+                  <div key={group.title} className="bg-backgroundClr/30 p-4 rounded-2xl border border-secondaryClr/5">
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-primaryClr/70 mb-3">{group.title}</h5>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {visibleKeys.map(key => (
+                        <div key={key}>
+                          <label className="block text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider mb-1 truncate" title={key.replace(/([A-Z])/g, ' $1').trim()}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            placeholder="0.0"
+                            className="w-full bg-white border border-secondaryClr/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20 transition-all"
+                            value={clientForm[key] || ''}
+                            onChange={(e) => setClientForm({ ...clientForm, [key]: e.target.value })}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                );
+              })}
             </div>
           </div>
 
@@ -972,6 +1074,36 @@ const OfficerDashboard = ({ user }) => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!orderToDelete}
+        onClose={() => setOrderToDelete(null)}
+        title="Confirm Deletion"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-secondaryClr/70 font-semibold">
+            Are you sure you want to delete this order? This action cannot be undone and will permanently remove this order from the system.
+          </p>
+          <div className="pt-4 flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOrderToDelete(null)}
+              className="w-1/2"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteOrder}
+              className="w-1/2 bg-red-600 hover:bg-red-700 border-red-600 text-white shadow-lg shadow-red-600/20"
+            >
+              Delete Order
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

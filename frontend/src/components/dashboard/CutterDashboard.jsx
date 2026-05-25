@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axios';
 import Modal from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { generateCADBlueprint } from '../../services/PatternEngine';
+import { getInstructionTemplate } from '../../services/InstructionTemplate';
 import {
   Scissors,
   Loader2,
@@ -15,7 +17,8 @@ import {
   Tag,
   Ruler,
   Layers,
-  Info
+  Info,
+  Calendar
 } from 'lucide-react';
 
 const CutterDashboard = ({ user }) => {
@@ -34,264 +37,30 @@ const CutterDashboard = ({ user }) => {
   const [showSeams, setShowSeams] = useState(true);
   const [showAnnotations, setShowAnnotations] = useState(true);
 
+  // CAD Blueprint Data - Generated from PatternEngine Service
+  const [cadBlueprintData, setCadBlueprintData] = useState(null);
+
   // Automated Pattern drafting formulas based on tailoring standards
-  const getCADBlueprints = (itemType, measurements) => {
-    const chest = parseFloat(measurements?.chest) || parseFloat(measurements?.chest_width) || 38;
-    const length = parseFloat(measurements?.length) || parseFloat(measurements?.total_length) || 30;
-    const shoulder = parseFloat(measurements?.shoulder) || parseFloat(measurements?.shoulder_width) || 18;
-    const waist = parseFloat(measurements?.waist) || parseFloat(measurements?.waist_line) || 34;
-    const armhole = parseFloat(measurements?.armhole) || parseFloat(measurements?.armhole_depth) || 9.5;
-    const sleeves = parseFloat(measurements?.sleeves) || parseFloat(measurements?.sleeve_length) || 24;
-    const neck = parseFloat(measurements?.neck) || parseFloat(measurements?.collar) || 15;
-    const hip = parseFloat(measurements?.hip) || parseFloat(measurements?.hips) || 40;
-
-    const scale = 7; // Screen scaling matrix factor (1 inch = 7 pixels)
-    const normalizedType = (itemType || 'Shirt').toLowerCase();
-
-    let path = '';
-    let seamPath = '';
-    let internalLines = [];
-    let guideLabels = [];
-    let annotations = [];
-    let viewBoxWidth = 500;
-    let viewBoxHeight = 500;
-
-    // --- CAD MODULE 1: TROUSERS / PANTS ---
-    if (normalizedType.includes('trouser') || normalizedType.includes('pant') || normalizedType.includes('bottom')) {
-      const waistW = (waist / 4 + 1) * scale;
-      const hipW = (hip / 4 + 1.5) * scale;
-      const outseamH = length * scale;
-      const crotchD = (hip / 4 + 2) * scale;
-      const bottomW = 8 * scale;
-
-      const xOff = 50;
-      const yOff = 40;
-      viewBoxWidth = hipW + 150;
-      viewBoxHeight = outseamH + 100;
-
-      path = `M ${xOff},${yOff}
-              L ${xOff + waistW},${yOff}
-              Q ${xOff + hipW + 10},${yOff + crotchD * 0.4} ${xOff + hipW},${yOff + crotchD}
-              Q ${xOff + hipW + 25},${yOff + crotchD + 5} ${xOff + hipW * 0.85},${yOff + crotchD + 20}
-              L ${xOff + bottomW + 20},${yOff + outseamH}
-              L ${xOff + 20},${yOff + outseamH}
-              L ${xOff},${yOff + crotchD}
-              Z`;
-
-      if (showSeams) {
-        seamPath = `M ${xOff + 8},${yOff + 8}
-                    L ${xOff + waistW - 8},${yOff + 8}
-                    Q ${xOff + hipW + 2},${yOff + crotchD * 0.4} ${xOff + hipW - 8},${yOff + crotchD}
-                    Q ${xOff + hipW + 15},${yOff + crotchD + 3} ${xOff + hipW * 0.85 - 6},${yOff + crotchD + 16}
-                    L ${xOff + bottomW + 14},${yOff + outseamH - 8}
-                    L ${xOff + 26},${yOff + outseamH - 8}
-                    L ${xOff + 8},${yOff + crotchD}
-                    Z`;
-      }
-
-      internalLines.push({
-        d: `M ${xOff},${yOff + crotchD} L ${xOff + hipW},${yOff + crotchD}`,
-        stroke: 'rgba(51, 65, 85, 0.4)',
-        strokeWidth: 1
-      });
-
-      guideLabels = [
-        { x: xOff + waistW / 2, y: yOff - 12, text: `Waist/4 + 1": ${(waist / 4 + 1).toFixed(1)}"`, key: 'waist' },
-        { x: xOff + hipW + 15, y: yOff + crotchD - 5, text: `Crotch: ${(hip / 4 + 2).toFixed(1)}"`, key: 'hip' },
-        { x: xOff - 20, y: yOff + outseamH / 2, text: `Outseam: ${length}"`, key: 'length' }
-      ];
-
-      annotations.push(
-        { x1: xOff, y1: yOff, x2: xOff + waistW, y2: yOff, key: 'waist', label: 'Waistband Attachment Line' },
-        { x1: xOff + hipW, y1: yOff + crotchD, x2: xOff + hipW * 0.85, y2: yOff + crotchD + 20, key: 'hip', label: 'Crotch Curve Rise Seam' },
-        { x1: xOff, y1: yOff, x2: xOff, y2: yOff + outseamH, key: 'length', label: 'Side Outseam Construction Reference' }
+  // Now delegated to PatternEngine service and managed with useEffect
+  useEffect(() => {
+    if (selectedCustomer && selectedCustomer.items?.[activeItemIndex]) {
+      const currentItem = selectedCustomer.items[activeItemIndex];
+      const blueprintData = generateCADBlueprint(
+        currentItem.itemType,
+        selectedCustomer.measurements,
+        showSeams
       );
-
-      // --- CAD MODULE 2: SUITS / BLAZERS / JACKETS ---
-    } else if (normalizedType.includes('coat') || normalizedType.includes('jacket') || normalizedType.includes('suit')) {
-      const shldW = (shoulder / 2) * scale;
-      const chestW = (chest / 4 + 2.5) * scale;
-      const lenH = length * scale;
-      const armDepth = armhole ? armhole * scale : (chest / 4 + 0.5) * scale;
-
-      const xOff = 50;
-      const yOff = 50;
-      viewBoxWidth = chestW + 150;
-      viewBoxHeight = lenH + 100;
-
-      path = `M ${xOff},${yOff + 25}
-              L ${xOff + shldW},${yOff + 10}
-              Q ${xOff + shldW - 10},${yOff + armDepth * 0.6} ${xOff + chestW},${yOff + armDepth}
-              L ${xOff + chestW * 0.9},${yOff + lenH * 0.6}
-              L ${xOff + chestW},${yOff + lenH}
-              L ${xOff},${yOff + lenH}
-              L ${xOff - 15},${yOff + lenH * 0.4}
-              Z`;
-
-      if (showSeams) {
-        seamPath = `M ${xOff + 8},${yOff + 27}
-                    L ${xOff + shldW - 6},${yOff + 14}
-                    Q ${xOff + shldW - 18},${yOff + armDepth * 0.6} ${xOff + chestW - 8},${yOff + armDepth - 4}
-                    L ${xOff + chestW * 0.9 - 8},${yOff + lenH * 0.6}
-                    L ${xOff + chestW - 8},${yOff + lenH - 8}
-                    L ${xOff + 8},${yOff + lenH - 8}
-                    L ${xOff - 7},${yOff + lenH * 0.4}
-                    Z`;
-      }
-
-      internalLines.push({
-        d: `M ${xOff},${yOff + armDepth} L ${xOff + chestW},${yOff + armDepth}`,
-        stroke: 'rgba(51, 65, 85, 0.4)',
-        strokeWidth: 1
-      });
-
-      guideLabels = [
-        { x: xOff + shldW / 2, y: yOff - 10, text: `Shoulder: ${(shoulder / 2).toFixed(1)}"`, key: 'shoulder' },
-        { x: xOff + chestW + 10, y: yOff + armDepth - 6, text: `Chest Block: ${chest}"`, key: 'chest' },
-        { x: xOff - 25, y: yOff + lenH / 2, text: `Jacket Length: ${length}"`, key: 'length' }
-      ];
-
-      annotations.push(
-        { x1: xOff, y1: yOff + 25, x2: xOff + shldW, y2: yOff + 10, key: 'shoulder', label: 'Shoulder Seam Slope' },
-        { x1: xOff + shldW, y1: yOff + 10, x2: xOff + chestW, y2: yOff + armDepth, key: 'armhole', label: 'Armhole Inset Arc' },
-        { x1: xOff, y1: yOff + 25, x2: xOff, y2: yOff + lenH, key: 'length', label: 'Center Front Centerline Trace' }
-      );
-
-      // --- CAD MODULE 3: FEMININE BLOUSE / DRESS / GOWNS ---
-    } else if (normalizedType.includes('dress') || normalizedType.includes('gown') || normalizedType.includes('frock')) {
-      const shldW = (shoulder / 2) * scale;
-      const chestW = (chest / 4 + 1.2) * scale;
-      const waistW = (waist / 4 + 1) * scale;
-      const lenH = length * scale;
-      const armDepth = armhole ? armhole * scale : (chest / 4 - 0.5) * scale;
-      const flareW = chestW * 1.8;
-
-      const xOff = 50;
-      const yOff = 40;
-      viewBoxWidth = flareW + 150;
-      viewBoxHeight = lenH + 100;
-
-      path = `M ${xOff},${yOff + 15}
-              L ${xOff + shldW},${yOff + 5}
-              Q ${xOff + shldW - 15},${yOff + armDepth * 0.6} ${xOff + chestW},${yOff + armDepth}
-              L ${xOff + waistW},${yOff + lenH * 0.35}
-              Q ${xOff + waistW * 1.3},${yOff + lenH * 0.6} ${xOff + flareW},${yOff + lenH}
-              L ${xOff},${yOff + lenH}
-              Z`;
-
-      if (showSeams) {
-        seamPath = `M ${xOff + 8},${yOff + 17}
-                    L ${xOff + shldW - 6},${yOff + 9}
-                    Q ${xOff + shldW - 22},${yOff + armDepth * 0.6} ${xOff + chestW - 8},${yOff + armDepth - 4}
-                    L ${xOff + waistW - 8},${yOff + lenH * 0.35}
-                    Q ${xOff + waistW * 1.3 - 8},${yOff + lenH * 0.6} ${xOff + flareW - 8},${yOff + lenH - 8}
-                    L ${xOff + 8},${yOff + lenH - 8}
-                    Z`;
-      }
-
-      internalLines.push({
-        d: `M ${xOff},${yOff + lenH * 0.35} L ${xOff + waistW},${yOff + lenH * 0.35}`,
-        stroke: 'rgba(51, 65, 85, 0.4)',
-        strokeWidth: 1,
-        dashArray: '2 2'
-      });
-
-      guideLabels = [
-        { x: xOff + chestW + 10, y: yOff + armDepth - 5, text: `Bust/4 + 1.2": ${(chest / 4 + 1.2).toFixed(1)}"`, key: 'chest' },
-        { x: xOff + waistW + 10, y: yOff + lenH * 0.35 + 4, text: `Waist Base: ${waist}"`, key: 'waist' },
-        { x: xOff - 20, y: yOff + lenH / 2, text: `Full Length: ${length}"`, key: 'length' }
-      ];
-
-      annotations.push(
-        { x1: xOff + chestW, y1: yOff + armDepth, x2: xOff + waistW, y2: yOff + lenH * 0.35, key: 'waist', label: 'Bodice Inseam Taper' },
-        { x1: xOff + waistW, y1: yOff + lenH * 0.35, x2: xOff + flareW, y2: yOff + lenH, key: 'length', label: 'Skirt Flare Line Expansion' }
-      );
-
-      // --- CAD MODULE 4: DYNAMIC SHIRT / TOPS & INDEPENDENT SLEEVE WORKSPACE ---
-    } else {
-      const neckW = (neck / 5) * scale;
-      const shldW = (shoulder / 2) * scale;
-      const chestW = (chest / 4 + 1.5) * scale;
-      const waistW = (waist / 4 + 1.0) * scale;
-      const lenH = length * scale;
-      const armDepth = armhole ? armhole * scale : (chest / 4) * scale;
-      const slvLen = sleeves ? sleeves * scale : 24 * scale;
-
-      const xCF = 40;
-      const yTop = 50;
-      const xSleeveOffset = chestW + 100; // Side-by-side splitting point
-
-      viewBoxWidth = xSleeveOffset + slvLen + 80;
-      viewBoxHeight = lenH + 120;
-
-      // 1. Structural Path for the Shirt Body Panel
-      path = `M ${xCF},${yTop + neckW}
-              Q ${xCF + neckW * 0.3},${yTop + neckW} ${xCF + neckW},${yTop}
-              L ${xCF + shldW},${yTop + 25}
-              Q ${xCF + shldW - 15},${yTop + armDepth * 0.7} ${xCF + chestW},${yTop + armDepth}
-              L ${xCF + waistW},${yTop + lenH * 0.6}
-              L ${xCF + chestW},${yTop + lenH}
-              Q ${xCF + chestW * 0.5},${yTop + lenH + 12} ${xCF},${yTop + lenH + 4}
-              Z`;
-
-      // 2. Structural Path for the Independent Sleeve Component
-      const slvWidth = (chest * 0.2) * scale;
-      path += ` M ${xSleeveOffset},${yTop + 40}
-                Q ${xSleeveOffset + slvLen * 0.25},${yTop - 5} ${xSleeveOffset + slvLen * 0.35},${yTop + slvWidth * 0.5}
-                L ${xSleeveOffset + slvLen},${yTop + slvWidth * 0.4}
-                L ${xSleeveOffset + slvLen},${yTop + slvWidth}
-                L ${xSleeveOffset},${yTop + slvWidth}
-                Z`;
-
-      if (showSeams) {
-        seamPath = `M ${xCF + 8},${yTop + neckW}
-                    Q ${xCF + neckW * 0.3},${yTop + neckW + 8} ${xCF + neckW + 2},${yTop + 8}
-                    L ${xCF + shldW - 6},${yTop + 27}
-                    Q ${xCF + shldW - 22},${yTop + armDepth * 0.7} ${xCF + chestW - 8},${yTop + armDepth - 4}
-                    L ${xCF + waistW - 8},${yTop + lenH * 0.6}
-                    L ${xCF + chestW - 8},${yTop + lenH - 8}
-                    Q ${xCF + chestW * 0.5},${yTop + lenH + 4} ${xCF + 8},${yTop + lenH - 4}
-                    Z
-                    M ${xSleeveOffset + 8},${yTop + 40}
-                    Q ${xSleeveOffset + slvLen * 0.25},${yTop + 3} ${xSleeveOffset + slvLen * 0.35},${yTop + slvWidth * 0.5 - 4}
-                    L ${xSleeveOffset + slvLen - 8},${yTop + slvWidth * 0.4 + 4}
-                    L ${xSleeveOffset + slvLen - 8},${yTop + slvWidth - 8}
-                    L ${xSleeveOffset + 8},${yTop + slvWidth - 8}
-                    Z`;
-      }
-
-      internalLines.push({
-        d: `M ${xCF + 15},${yTop + neckW} L ${xCF + 15},${yTop + lenH + 4}`,
-        stroke: '#475569',
-        strokeWidth: 1.2,
-        dashArray: '4 4'
-      });
-
-      internalLines.push({
-        d: `M ${xCF},${yTop + armDepth} L ${xCF + chestW},${yTop + armDepth}`,
-        stroke: 'rgba(51, 65, 85, 0.4)',
-        strokeWidth: 1
-      });
-
-      guideLabels = [
-        { x: xCF + 5, y: yTop - 12, text: `Collar: ${neck}"`, key: 'neck' },
-        { x: xCF + shldW - 25, y: yTop + 10, text: `Shoulder: ${(shoulder / 2).toFixed(1)}"`, key: 'shoulder' },
-        { x: xCF + chestW + 10, y: yTop + armDepth - 6, text: `Chest/4 + 1.5": ${(chest / 4 + 1.5).toFixed(1)}"`, key: 'chest' },
-        { x: xCF - 15, y: yTop + lenH / 2, text: `Length: ${length}"`, key: 'length' },
-        { x: xSleeveOffset + slvLen / 2, y: yTop + slvWidth + 18, text: `Sleeve Block: ${sleeves}"`, key: 'sleeves' }
-      ];
-
-      annotations.push(
-        { x1: xCF + neckW, y1: yTop, x2: xCF + shldW, y2: yTop + 25, key: 'shoulder', label: 'Shoulder Slope Seam' },
-        { x1: xCF, y1: yTop + armDepth, x2: xCF + chestW, y2: yTop + armDepth, key: 'chest', label: 'Chest Guideline' },
-        { x1: xCF, y1: yTop + lenH * 0.6, x2: xCF + waistW, y2: yTop + lenH * 0.6, key: 'waist', label: 'Waist Alignment Line' },
-        { x1: xCF, y1: yTop, x2: xCF, y2: yTop + lenH, key: 'length', label: 'Total Placket Length' },
-        { x1: xSleeveOffset, y1: yTop + slvWidth, x2: xSleeveOffset + slvLen, y2: yTop + slvWidth, key: 'sleeves', label: 'Sleeve Length Underarm' }
-      );
+      setCadBlueprintData(blueprintData);
     }
+  }, [selectedCustomer, activeItemIndex, showSeams]);
 
-    return { path, seamPath, internalLines, guideLabels, annotations, viewBoxWidth, viewBoxHeight };
-  };
+  // Memoize instruction template to avoid recalculation on every render
+  const currentInstructions = useMemo(() => {
+    if (selectedCustomer?.items?.[activeItemIndex]) {
+      return getInstructionTemplate(selectedCustomer.items[activeItemIndex].itemType);
+    }
+    return null;
+  }, [selectedCustomer, activeItemIndex]);
 
   useEffect(() => {
     fetchPendingOrders();
@@ -341,29 +110,30 @@ const CutterDashboard = ({ user }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-fadeIn">
       {/* Top Header Grid */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-secondaryClr/5">
         <div>
-          <div className="flex items-center gap-2 text-primaryClr/60 text-sm font-semibold mb-2">
-            <div className="p-2 bg-primaryClr/5 rounded-lg text-primaryClr">
-              <Scissors className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primaryClr/10 to-blue-500/10 rounded-full mb-3 border border-primaryClr/10">
+            <div className="p-1.5 bg-white rounded-full text-primaryClr shadow-sm">
+              <Scissors className="w-3.5 h-3.5" />
             </div>
-            <span>Master Cutting Deck</span>
+            <span className="text-xs font-black uppercase tracking-widest text-primaryClr/80">Master Cutting Deck</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-primaryClr">
+          <h1 className="text-4xl font-black tracking-tight text-secondaryClr bg-clip-text text-transparent bg-gradient-to-br from-secondaryClr to-primaryClr">
             Welcome back, {user?.name || 'Cutter Master'}
           </h1>
+          <p className="mt-2 text-sm text-secondaryClr/50 font-medium">Coordinate, measure, and precisely draft garments from the production queue.</p>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="bg-white border border-secondaryClr/10 px-6 py-3 rounded-2xl shadow-sm flex items-center gap-4">
-            <div>
-              <span className="text-xs font-semibold text-secondaryClr/50 block">In Queue</span>
-              <p className="text-xl font-bold text-primaryClr">{orders.filter(o => o.status === 'pending').length}</p>
+          <div className="bg-white border border-secondaryClr/5 px-6 py-4 rounded-3xl shadow-xl shadow-primaryClr/5 flex items-center gap-6 hover:shadow-2xl transition-all duration-300">
+            <div className="text-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 block mb-1">In Queue</span>
+              <p className="text-3xl font-black text-primaryClr">{orders.filter(o => o.status === 'pending').length}</p>
             </div>
-            <div className="w-px h-8 bg-secondaryClr/10" />
-            <div>
-              <span className="text-xs font-semibold text-secondaryClr/50 block">On Table</span>
-              <p className="text-xl font-bold text-amber-500">{orders.filter(o => o.status === 'cutting').length}</p>
+            <div className="w-px h-12 bg-gradient-to-b from-transparent via-secondaryClr/10 to-transparent" />
+            <div className="text-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 block mb-1">On Table</span>
+              <p className="text-3xl font-black text-amber-500 drop-shadow-sm">{orders.filter(o => o.status === 'cutting').length}</p>
             </div>
           </div>
         </div>
@@ -371,67 +141,79 @@ const CutterDashboard = ({ user }) => {
 
       {/* --- RE-RESTORED ORIGINAL HIGH-QUALITY TABLE --- */}
       {orders.length === 0 ? (
-        <div className="bg-white border border-secondaryClr/10 rounded-[2rem] p-16 text-center max-w-2xl mx-auto space-y-4 shadow-sm">
-          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto text-green-500 mb-4">
-            <CheckCircle2 className="w-8 h-8" />
+        <div className="bg-white border border-secondaryClr/5 rounded-[2rem] p-16 text-center max-w-2xl mx-auto space-y-4 shadow-xl shadow-primaryClr/5 transform transition-all hover:scale-[1.01]">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center mx-auto text-emerald-500 mb-6 shadow-inner">
+            <CheckCircle2 className="w-10 h-10 drop-shadow-sm" />
           </div>
-          <h3 className="text-xl font-bold text-primaryClr">Cutting table completely clear!</h3>
-          <p className="text-sm text-secondaryClr/60 max-w-md mx-auto leading-relaxed">
+          <h3 className="text-2xl font-black text-secondaryClr">Cutting table completely clear!</h3>
+          <p className="text-sm text-secondaryClr/50 max-w-md mx-auto leading-relaxed font-medium">
             There are currently no standard or custom orders left in the pending pattern pool. Enjoy the breather or coordinate with the Client Intake Officer.
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-secondaryClr/10 rounded-[2rem] overflow-hidden shadow-sm">
-          <div className="px-8 py-6 border-b border-secondaryClr/5 flex justify-between items-center bg-gray-50/50">
-            <h2 className="text-lg font-bold text-primaryClr">Active Cutting Pipeline</h2>
-            <span className="text-xs font-semibold text-primaryClr bg-primaryClr/5 px-3 py-1.5 rounded-full">
+        <div className="bg-white border border-secondaryClr/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-primaryClr/5">
+          <div className="px-8 py-6 border-b border-secondaryClr/5 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
+            <h2 className="text-xl font-black text-secondaryClr flex items-center gap-2">
+              Active Cutting Pipeline
+            </h2>
+            <span className="text-xs font-bold text-primaryClr bg-primaryClr/10 px-4 py-2 rounded-full shadow-inner">
               {orders.length} Active Job{orders.length > 1 ? 's' : ''}
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto p-4">
+            <table className="w-full text-left border-separate border-spacing-y-2">
               <thead>
-                <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
-                  <th className="px-6 py-4">Order ID</th>
-                  <th className="px-6 py-4">Customer Name</th>
-                  <th className="px-6 py-4">Garments</th>
-                  <th className="px-6 py-4">Due Date</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                <tr className="text-secondaryClr/40 uppercase tracking-widest text-[10px] font-black">
+                  <th className="px-6 py-3 pl-8">Order ID</th>
+                  <th className="px-6 py-3">Customer Name</th>
+                  <th className="px-6 py-3">Garments</th>
+                  <th className="px-6 py-3">Due Date</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3 text-right pr-8">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-secondaryClr/5">
+              <tbody className="">
                 {orders.map((order) => (
-                  <tr key={order._id} className="hover:bg-secondaryClr/[0.01] transition-colors group">
-                    <td className="px-6 py-4 font-bold text-primaryClr">
+                  <tr key={order._id} className="group bg-white hover:bg-slate-50/50 transition-all duration-300 shadow-sm border border-secondaryClr/5 hover:shadow-md rounded-2xl overflow-hidden">
+                    <td className="px-6 py-5 pl-8 font-black text-primaryClr/80 rounded-l-2xl border-y border-l border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
                       {order.orderNumber || order._id?.slice(-5).toUpperCase()}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="font-bold text-sm text-secondaryClr text-left">
-                        {order.customer?.name || 'Walk-in Client'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 space-y-1">
-                      {order.items?.map((item, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1.5 bg-secondaryClr/5 text-secondaryClr text-xs font-bold px-2.5 py-1 rounded-lg mr-2">
-                          {item.itemType} <span className="opacity-60">x{item.quantity}</span>
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primaryClr/20 to-primaryClr/5 flex items-center justify-center text-primaryClr font-bold text-xs shadow-inner">
+                          {(order.customer?.name || 'W').charAt(0)}
+                        </div>
+                        <span className="font-bold text-sm text-secondaryClr">
+                          {order.customer?.name || 'Walk-in Client'}
                         </span>
-                      ))}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-secondaryClr/70">
-                      {new Date(order.deadline).toLocaleDateString()}
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <div className="flex flex-wrap gap-2">
+                        {order.items?.map((item, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1.5 bg-slate-100/80 text-secondaryClr/80 text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border border-secondaryClr/5 shadow-sm">
+                            {item.itemType} <span className="opacity-50 text-[10px]">x{item.quantity}</span>
+                          </span>
+                        ))}
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${order.status === 'cutting'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-blue-100 text-blue-700'
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <div className="inline-flex items-center gap-2 text-xs font-bold text-secondaryClr/60 bg-secondaryClr/5 px-3 py-1.5 rounded-xl">
+                        <Calendar className="w-3.5 h-3.5 opacity-50" />
+                        {new Date(order.deadline).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <span className={`inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-sm ${order.status === 'cutting'
+                        ? 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200'
+                        : 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200'
                         }`}>
                         {order.status === 'cutting' ? 'Cutting Table' : 'In Queue'}
                       </span>
                     </td>
-                    <td className="px-6 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <td className="px-6 py-5 pr-8 text-right rounded-r-2xl border-y border-r border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <div className="flex items-center justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="outline"
                           size="sm"
@@ -443,7 +225,7 @@ const CutterDashboard = ({ user }) => {
                             });
                             setActiveItemIndex(0);
                           }}
-                          className="px-2.5 py-1.5 border border-secondaryClr/10 hover:bg-secondaryClr/5 text-secondaryClr rounded-lg transition-all"
+                          className="px-3 py-2 border border-secondaryClr/10 hover:bg-primaryClr hover:text-white hover:border-primaryClr text-secondaryClr/70 rounded-xl transition-all shadow-sm"
                           title="View CAD Layout"
                         >
                           <Maximize2 className="w-4 h-4" />
@@ -451,13 +233,17 @@ const CutterDashboard = ({ user }) => {
                         <Button
                           size="sm"
                           onClick={() => handleOpenStatusModal(order)}
-                          className={`px-2.5 py-1.5 rounded-lg transition-all ${order.status === 'cutting'
-                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                            : 'bg-primaryClr hover:bg-primaryClr/90 text-white'
+                          className={`px-4 py-2 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 ${order.status === 'cutting'
+                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-white border-emerald-400'
+                            : 'bg-gradient-to-r from-primaryClr to-blue-600 text-white border-primaryClr'
                             }`}
                           title={order.status === 'cutting' ? 'Finish Cutting' : 'Start Cutting'}
                         >
-                          {order.status === 'cutting' ? <CheckCircle2 className="w-4 h-4" /> : <Scissors className="w-4 h-4" />}
+                          {order.status === 'cutting' ? (
+                            <div className="flex items-center gap-2 font-bold text-xs"><CheckCircle2 className="w-4 h-4" /> Finish</div>
+                          ) : (
+                            <div className="flex items-center gap-2 font-bold text-xs"><Scissors className="w-4 h-4" /> Start</div>
+                          )}
                         </Button>
                       </div>
                     </td>
@@ -477,42 +263,11 @@ const CutterDashboard = ({ user }) => {
             setSelectedCustomer(null);
             setHoveredMeasurement(null);
           }}
-          title={`Digital CAD Matrix Sheet: ${selectedCustomer.name || 'Client Specs'}`}
-          className="max-w-5xl"
+          title={`Blueprint & Measurements: ${selectedCustomer.name || 'Client Specs'}`}
+          size="full"
         >
           <div className="space-y-4 py-2">
 
-            {/* Order & Client Summary Header */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-primaryClr/3 border border-primaryClr/10 rounded-2xl p-4">
-              <div className="flex items-start gap-2">
-                <User className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Client</p>
-                  <p className="text-sm font-bold text-primaryClr">{selectedCustomer.name || '—'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Phone className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Phone</p>
-                  <p className="text-sm font-bold text-secondaryClr">{selectedCustomer.phone || '—'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Layers className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Total Items</p>
-                  <p className="text-sm font-bold text-secondaryClr">{selectedCustomer.items?.length || 1} Garment{selectedCustomer.items?.length > 1 ? 's' : ''}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Tag className="w-4 h-4 text-primaryClr/60 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-secondaryClr/40">Active Pattern</p>
-                  <p className="text-sm font-bold text-amber-600">{selectedCustomer.items?.[activeItemIndex]?.itemType || '—'}</p>
-                </div>
-              </div>
-            </div>
 
             {/* Per-item notes from officer */}
             {selectedCustomer.items?.[activeItemIndex]?.notes && (
@@ -526,7 +281,7 @@ const CutterDashboard = ({ user }) => {
 
             {/* Multi-item Toggle Ribbon within a single order booking */}
             {selectedCustomer.items?.length > 1 && (
-              <div className="flex gap-2 bg-gray-50/80 p-1.5 rounded-xl w-fit border border-gray-200/50">
+              <div className="flex gap-2 bg-slate-100/80 p-1.5 rounded-2xl w-fit border border-secondaryClr/5 shadow-inner">
                 {selectedCustomer.items.map((item, idx) => (
                   <button
                     key={idx}
@@ -535,9 +290,9 @@ const CutterDashboard = ({ user }) => {
                       setActiveItemIndex(idx);
                       setHoveredMeasurement(null);
                     }}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${activeItemIndex === idx
-                      ? 'bg-white text-primaryClr shadow-sm border border-gray-200/50'
-                      : 'text-secondaryClr/60 hover:text-primaryClr hover:bg-white/50'
+                    className={`px-5 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-300 ${activeItemIndex === idx
+                      ? 'bg-white text-primaryClr shadow-md border border-white transform scale-[1.02]'
+                      : 'text-secondaryClr/50 hover:text-primaryClr hover:bg-white/50 border border-transparent'
                       }`}
                   >
                     {item.itemType}
@@ -546,221 +301,285 @@ const CutterDashboard = ({ user }) => {
               </div>
             )}
 
-            {/* Micro-System Status Control Bar */}
-            <div className="flex flex-wrap items-center justify-between border border-slate-800 bg-slate-950 px-4 py-2.5 rounded-xl text-xs font-mono text-slate-400 gap-3">
+            {/* Micro-System Status Control Bar - Simplified */}
+            <div className="flex flex-wrap items-center justify-between bg-primaryClr/5 px-4 py-3 rounded-xl border border-primaryClr/10 text-xs font-bold text-primaryClr/70 gap-3">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-slate-300 font-bold">PATTERN: {selectedCustomer.items?.[activeItemIndex]?.itemType?.toUpperCase()}</span>
+                <div className="flex items-center gap-2 text-primaryClr">
+                  <Scissors className="w-4 h-4" />
+                  <span>Pattern: {selectedCustomer.items?.[activeItemIndex]?.itemType?.toUpperCase()}</span>
                 </div>
-                <div className="hidden sm:block text-slate-600">|</div>
-                <span className="hidden sm:block text-slate-500">QTY: {selectedCustomer.items?.[activeItemIndex]?.quantity || 1} PC</span>
-                <div className="hidden sm:block text-slate-600">|</div>
-                <span className="hidden sm:block text-slate-500">SCALE: 7px/in</span>
-                <div className="hidden sm:block text-slate-600">|</div>
-                <span className="hidden md:block text-emerald-400 font-bold">● MATRIX ACTIVE</span>
+                <div className="hidden sm:block text-primaryClr/20">|</div>
+                <span className="hidden sm:block">Qty: {selectedCustomer.items?.[activeItemIndex]?.quantity || 1}</span>
               </div>
 
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-1.5 cursor-pointer hover:text-white transition">
-                  <input type="checkbox" checked={showGrid} onChange={() => setShowGrid(!showGrid)} className="rounded bg-slate-900 border-slate-700 text-blue-500 focus:ring-0 w-3.5 h-3.5" />
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer hover:text-primaryClr transition-colors">
+                  <input type="checkbox" checked={showGrid} onChange={() => setShowGrid(!showGrid)} className="rounded border-primaryClr/20 text-primaryClr focus:ring-primaryClr/20 w-4 h-4" />
                   <span>Grid</span>
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer hover:text-white transition">
-                  <input type="checkbox" checked={showSeams} onChange={() => setShowSeams(!showSeams)} className="rounded bg-slate-900 border-slate-700 text-blue-500 focus:ring-0 w-3.5 h-3.5" />
+                <label className="flex items-center gap-2 cursor-pointer hover:text-primaryClr transition-colors">
+                  <input type="checkbox" checked={showSeams} onChange={() => setShowSeams(!showSeams)} className="rounded border-primaryClr/20 text-primaryClr focus:ring-primaryClr/20 w-4 h-4" />
                   <span>Seams</span>
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer hover:text-white transition">
-                  <input type="checkbox" checked={showAnnotations} onChange={() => setShowAnnotations(!showAnnotations)} className="rounded bg-slate-900 border-slate-700 text-blue-500 focus:ring-0 w-3.5 h-3.5" />
+                <label className="flex items-center gap-2 cursor-pointer hover:text-primaryClr transition-colors">
+                  <input type="checkbox" checked={showAnnotations} onChange={() => setShowAnnotations(!showAnnotations)} className="rounded border-primaryClr/20 text-primaryClr focus:ring-primaryClr/20 w-4 h-4" />
                   <span>Annotations</span>
                 </label>
               </div>
             </div>
 
-            {/* Double Column Display: Data Sidebar + Master Canvas Display */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* Full Width Display: Horizontal Measurements Ribbon + Master Canvas Display */}
+            <div className="flex flex-col gap-4">
 
-              {/* Floating Parameters Interactive List */}
-              <div className="lg:col-span-1 space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 block mb-1">
-                  Blueprint Parameters
-                </span>
-
-                <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-                  {Object.entries(selectedCustomer.measurements || {}).map(([key, val]) => {
-                    const cleanValue = parseFloat(val);
-                    if (!cleanValue) return null;
-
-                    const isHovered = hoveredMeasurement === key;
-
-                    return (
-                      <div
-                        key={key}
-                        onMouseEnter={() => setHoveredMeasurement(key)}
-                        onMouseLeave={() => setHoveredMeasurement(null)}
-                        className={`p-4 rounded-2xl border transition-all duration-300 cursor-crosshair text-center lg:text-left ${isHovered
-                          ? 'bg-primaryClr text-white border-primaryClr shadow-md scale-105'
-                          : 'bg-white border-gray-100 hover:border-primaryClr/30 hover:shadow-sm'
-                          }`}
-                      >
-                        <span className={`text-[10px] uppercase font-bold tracking-widest block mb-1 ${isHovered ? 'text-white/80' : 'text-secondaryClr/50'}`}>
-                          {key.replace('_', ' ')}
-                        </span>
-                        <p className={`text-xl font-bold ${isHovered ? 'text-white' : 'text-primaryClr'}`}>
-                          {cleanValue}"
-                        </p>
-                      </div>
-                    );
-                  })}
+              {/* Required Measurements Ribbon */}
+              <div className="bg-primaryClr/5 p-3 rounded-2xl border border-primaryClr/10 w-full mb-2">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <Ruler className="w-3.5 h-3.5 text-primaryClr" />
+                  <span className="text-xs font-black uppercase tracking-widest text-primaryClr">
+                    Required Measurements
+                  </span>
                 </div>
 
-                {selectedCustomer.styleNotes && (
-                  <div className="bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 mt-4">
-                    <div className="flex items-center gap-1.5 text-amber-700 text-xs font-bold uppercase tracking-widest mb-2">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Style Directive</span>
-                    </div>
-                    <p className="text-sm text-amber-900/80 font-medium leading-relaxed">
-                      {selectedCustomer.styleNotes}
-                    </p>
-                  </div>
-                )}
+                <div className="flex overflow-x-auto gap-3 pb-2 custom-scrollbar">
+                  {(() => {
+                    const itemType = selectedCustomer.items?.[activeItemIndex]?.itemType;
+                    const mapping = {
+                      Suit: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'neck', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack', 'bicep', 'capHeight'],
+                      Shirt: ['chest', 'shoulder', 'sleeves', 'neck', 'length', 'fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'],
+                      Trousers: ['waist', 'hips', 'inseam', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'],
+                      Dress: ['chest', 'waist', 'hips', 'shoulder', 'length'],
+                      Coat: ['chest', 'waist', 'shoulder', 'sleeves', 'length', 'bicep', 'capHeight']
+                    };
+                    const keysToShow = mapping[itemType] || Object.keys(selectedCustomer.measurements || {});
+
+                    return keysToShow.map((key) => {
+                      const val = selectedCustomer.measurements?.[key];
+                      const cleanValue = parseFloat(val);
+                      if (!cleanValue) return null;
+
+                      const isHovered = hoveredMeasurement === key;
+
+                      return (
+                        <div
+                          key={key}
+                          onClick={() => setHoveredMeasurement(isHovered ? null : key)}
+                          className={`flex-shrink-0 px-4 py-2 rounded-xl border transition-all duration-200 cursor-pointer flex items-center gap-3 ${isHovered
+                            ? 'bg-primaryClr text-white border-primaryClr shadow-md scale-[1.02]'
+                            : 'bg-white border-primaryClr/10 hover:border-primaryClr/30 hover:bg-primaryClr/[0.02]'
+                            }`}
+                        >
+                          <span className={`text-[10px] uppercase font-bold tracking-widest whitespace-nowrap ${isHovered ? 'text-white/80' : 'text-secondaryClr/60'}`} title={key.replace(/([A-Z])/g, ' $1').trim()}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                          <span className={`text-sm font-black whitespace-nowrap ${isHovered ? 'text-white' : 'text-primaryClr'}`}>
+                            {cleanValue} cm
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
-              {/* Obsidian Blueprint Engine Canvas Grid */}
-              <div className="lg:col-span-3 bg-slate-950 rounded-2xl border border-slate-800 p-4 relative flex flex-col justify-between min-h-[460px] overflow-hidden">
+              {/* Master CAD Canvas */}
+              <div className="w-full bg-backgroundClr rounded-xl border border-secondaryClr/20 p-0 relative flex flex-col min-h-[70vh] overflow-hidden shadow-inner group font-mono">
+
+                {/* Standard CAD Grid overlay */}
                 {showGrid && (
                   <div
-                    className="absolute inset-0 opacity-10 pointer-events-none rounded-2xl"
+                    className="absolute inset-0 pointer-events-none opacity-20"
                     style={{
                       backgroundImage: `
-                        linear-gradient(to right, #3b82f6 1px, transparent 1px),
-                        linear-gradient(to bottom, #3b82f6 1px, transparent 1px)
+                        linear-gradient(to right, var(--primaryClr, #075985) 1px, transparent 1px),
+                        linear-gradient(to bottom, var(--primaryClr, #075985) 1px, transparent 1px),
+                        linear-gradient(to right, var(--primaryClr, #075985) 1px, transparent 1px),
+                        linear-gradient(to bottom, var(--primaryClr, #075985) 1px, transparent 1px)
                       `,
-                      backgroundSize: '20px 20px'
+                      backgroundSize: '100px 100px, 100px 100px, 10px 10px, 10px 10px',
+                      backgroundPosition: 'center center'
                     }}
                   />
                 )}
 
-                <div className="my-auto overflow-auto flex items-center justify-center p-2 min-h-[360px]">
-                  {(() => {
-                    const blueprintData = getCADBlueprints(
-                      selectedCustomer.items?.[activeItemIndex]?.itemType,
-                      selectedCustomer.measurements
-                    );
-
-                    return (
-                      <svg
-                        width={blueprintData.viewBoxWidth}
-                        height={blueprintData.viewBoxHeight}
-                        className="overflow-visible font-mono select-none"
-                      >
-                        {showSeams && blueprintData.seamPath && (
-                          <path
-                            d={blueprintData.seamPath}
-                            fill="none"
-                            stroke="#64748b"
-                            strokeWidth="1"
-                            strokeDasharray="3 3"
-                            className="opacity-70"
-                          />
-                        )}
-
-                        <path
-                          d={blueprintData.path}
-                          fill="rgba(59, 130, 246, 0.05)"
-                          stroke="#3b82f6"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-
-                        {blueprintData.internalLines?.map((line, lIdx) => (
-                          <line
-                            key={lIdx}
-                            {...(line.d ? { d: line.d } : {
-                              x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2
-                            })}
-                            stroke={line.stroke}
-                            strokeWidth={line.strokeWidth}
-                            strokeDasharray={line.dashArray}
-                          />
-                        ))}
-
-                        {blueprintData.guideLabels?.map((label, lblIdx) => {
-                          const isHighlighted = hoveredMeasurement === label.key;
-                          return (
-                            <g key={lblIdx} className="transition-all duration-200">
-                              {isHighlighted && (
-                                <circle cx={label.x} cy={label.y - 4} r="3" fill="#ef4444" className="animate-ping" />
-                              )}
-                              <text
-                                x={label.x}
-                                y={label.y}
-                                className={`text-[10px] font-bold ${isHighlighted ? 'fill-rose-400 font-black text-xs scale-105' : 'fill-slate-400'}`}
-                              >
-                                {label.text}
-                              </text>
-                            </g>
-                          );
-                        })}
-
-                        {showAnnotations && blueprintData.annotations?.map((anno, aIdx) => {
-                          const isActive = hoveredMeasurement === anno.key;
-                          if (!isActive) return null;
-
-                          return (
-                            <g key={aIdx} className="opacity-90 animate-fadeIn">
-                              <line x1={anno.x1} y1={anno.y1} x2={anno.x2} y2={anno.y2} stroke="#f43f5e" strokeWidth="3" strokeLinecap="round" />
-                              <rect x={(anno.x1 + anno.x2) / 2 - 50} y={(anno.y1 + anno.y2) / 2 - 25} width="100" height="18" rx="4" fill="#1e1b4b" stroke="#f43f5e" strokeWidth="1" />
-                              <text x={(anno.x1 + anno.x2) / 2} y={(anno.y1 + anno.y2) / 2 - 13} textAnchor="middle" className="fill-rose-300 text-[8px] font-bold tracking-tight">
-                                {anno.label}
-                              </text>
-                            </g>
-                          );
-                        })}
-                      </svg>
-                    );
-                  })()}
-                </div>
-
-                <div className="text-[9px] font-mono text-slate-500 bg-slate-950/90 p-2.5 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row justify-between items-center gap-2">
-                  <div className="flex items-center gap-4">
-                    <span className="text-slate-600">SCALE: 1in = 7px</span>
-                    <span className="text-slate-600">|</span>
-                    <span className="text-slate-600">UNIT: inches</span>
-                    <span className="text-slate-600">|</span>
-                    <span className="text-slate-400">PATTERN: {selectedCustomer.items?.[activeItemIndex]?.itemType?.toUpperCase()}</span>
-                    <span className="text-slate-600">|</span>
-                    <span className="text-emerald-500">● SEAM ALLOWANCE: {showSeams ? 'ON' : 'OFF'}</span>
-                  </div>
-                  <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider transition">
-                    <span>⎙</span> Print Blueprint
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Measurement Summary Table */}
-            <div className="border border-secondaryClr/10 rounded-2xl overflow-hidden">
-              <div className="bg-secondaryClr/5 px-4 py-2.5 flex items-center gap-2">
-                <Ruler className="w-3.5 h-3.5 text-primaryClr/60" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/50">Full Measurement Spec Sheet</span>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 divide-x divide-secondaryClr/5">
-                {Object.entries(selectedCustomer.measurements || {}).map(([key, val]) => {
-                  const v = parseFloat(val);
-                  if (!v) return null;
-                  return (
-                    <div key={key} className="px-3 py-2.5 text-center">
-                      <p className="text-[9px] uppercase font-bold tracking-widest text-secondaryClr/40 mb-0.5">{key.replace('_', ' ')}</p>
-                      <p className="text-sm font-black text-primaryClr">{v}"</p>
+                {/* CAD Axis Rulers */}
+                {showGrid && (
+                  <>
+                    <div className="absolute top-0 left-0 right-0 h-5 bg-white border-b border-primaryClr/20 flex items-end px-5 z-10 select-none">
+                      <div className="w-full h-full opacity-20" style={{ background: 'repeating-linear-gradient(to right, transparent, transparent 9px, var(--primaryClr, #075985) 9px, var(--primaryClr, #075985) 10px)' }} />
                     </div>
-                  );
-                })}
+                    <div className="absolute top-0 left-0 bottom-0 w-5 bg-white border-r border-primaryClr/20 flex items-end py-5 z-10 select-none">
+                      <div className="w-full h-full opacity-20" style={{ background: 'repeating-linear-gradient(to bottom, transparent, transparent 9px, var(--primaryClr, #075985) 9px, var(--primaryClr, #075985) 10px)' }} />
+                    </div>
+                    <div className="absolute top-0 left-0 w-5 h-5 bg-white z-20 border-r border-b border-primaryClr/20" />
+                  </>
+                )}
+
+                {/* Paper Pattern Information */}
+                <div className="absolute top-8 left-8 text-xs font-mono text-[#6c757d] select-none pointer-events-none z-20 flex flex-col gap-1">
+                  <span className="font-bold text-[#212529]">{selectedCustomer.items?.[activeItemIndex]?.itemType?.toUpperCase() || 'DRAFT'}</span>
+                  <span>DIGITAL BLOCK</span>
+                  <span>UNITS: CM</span>
+                </div>
+
+                {/* SVG Canvas - Centered */}
+                <div className="flex-1 overflow-auto flex items-center justify-center p-12 relative z-0 pb-16 pt-8">
+                  {cadBlueprintData ? (
+                    <svg
+                      width={cadBlueprintData.viewBoxWidth}
+                      height={cadBlueprintData.viewBoxHeight}
+                      className="overflow-visible select-none cursor-crosshair"
+                    >
+                      {/* Seam allowance — dashed */}
+                      {showSeams && cadBlueprintData.seamPath && (
+                        <path
+                          d={cadBlueprintData.seamPath}
+                          fill="none"
+                          stroke="currentColor"
+                          className="text-primaryClr/40"
+                          strokeWidth="1.2"
+                          strokeDasharray="6 4"
+                        />
+                      )}
+
+                      {/* Pattern Background Fill (transparent to match image) */}
+                      <path
+                        d={cadBlueprintData.path}
+                        fill="transparent"
+                      />
+
+                      {/* Main pattern outline — exact red line from image */}
+                      <path
+                        d={cadBlueprintData.path}
+                        fill="none"
+                        stroke="#ef4444"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="hover:stroke-red-600 transition-colors"
+                      />
+
+                      {/* Internal construction lines */}
+                      {cadBlueprintData.internalLines?.map((line, lIdx) => (
+                        <path
+                          key={lIdx}
+                          d={line.d || `M ${line.x1} ${line.y1} L ${line.x2} ${line.y2}`}
+                          fill="none"
+                          stroke={line.stroke || "currentColor"}
+                          strokeWidth={line.strokeWidth || "1"}
+                          strokeDasharray={line.dashArray}
+                          className={line.stroke ? "" : "text-primaryClr opacity-40"}
+                        />
+                      ))}
+
+                      {/* Guide labels - bold sans-serif text & dimensions */}
+                      {cadBlueprintData.guideLabels?.map((label, lblIdx) => {
+                        const isTitle = label.type === 'title' || label.type === 'title_blue';
+                        const isDim = label.type === 'dim';
+                        
+                        let fillClass = "text-secondaryClr";
+                        let fillHex = "currentColor";
+                        if (label.type === 'label_red') fillHex = "#ef4444";
+                        if (label.type === 'label_blue' || label.type === 'title_blue') fillHex = "#3b82f6";
+                        if (isDim) fillClass = "text-primaryClr/60";
+
+                        return (
+                          <g key={lblIdx}>
+                            <text
+                              x={label.x}
+                              y={label.y}
+                              fontSize={isTitle ? "32" : (isDim ? "10" : "14")}
+                              fontFamily="sans-serif"
+                              fill={fillHex}
+                              fontWeight={isDim ? "normal" : "bold"}
+                              textAnchor={isTitle || isDim ? "middle" : "start"}
+                              className={`pointer-events-none select-none ${fillHex === "currentColor" ? fillClass : ""}`}
+                              transform={label.rotation ? `rotate(${label.rotation}, ${label.x}, ${label.y})` : undefined}
+                            >
+                              {label.text}
+                            </text>
+                          </g>
+                        );
+                      })}
+
+                      {/* Hover annotations - realistic measurements */}
+                      {showAnnotations && cadBlueprintData.annotations?.map((anno, aIdx) => {
+                        const isActive = hoveredMeasurement === anno.key;
+                        if (!isActive) return null;
+                        const mx = (anno.x1 + anno.x2) / 2;
+                        const my = (anno.y1 + anno.y2) / 2;
+                        const labelW = anno.label.length * 7 + 10;
+                        return (
+                          <g key={aIdx}>
+                            {/* Leader lines */}
+                            <line x1={anno.x1} y1={anno.y1} x2={anno.x2} y2={anno.y2}
+                              stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" className="text-primaryClr" />
+                            {/* Tick marks */}
+                            <circle cx={anno.x1} cy={anno.y1} r="3" fill="currentColor" className="text-primaryClr" />
+                            <circle cx={anno.x2} cy={anno.y2} r="3" fill="currentColor" className="text-primaryClr" />
+
+                            <rect x={mx - labelW / 2} y={my - 10} width={labelW} height={20}
+                              fill="#ffffff" stroke="currentColor" strokeWidth="1" rx="4" className="text-primaryClr" />
+                            <text x={mx} y={my + 4} textAnchor="middle"
+                              fontSize="11" fill="currentColor" fontWeight="bold" fontFamily="sans-serif" className="text-primaryClr">
+                              {anno.label}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-[#adb5bd] space-y-2">
+                      <div className="w-12 h-12 border border-[#dee2e6] flex items-center justify-center bg-white rounded-full">
+                        <Scissors className="w-5 h-5 text-[#adb5bd]" />
+                      </div>
+                      <p className="text-xs font-mono">NO PATTERN DATA</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Paper Status Bar Footer */}
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-white/80 backdrop-blur-md border-t border-primaryClr/10 flex justify-between items-center px-6 z-20 text-[10px] font-mono text-primaryClr/60 select-none">
+                  <div className="flex items-center gap-6">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-0.5 bg-secondaryClr"></span>
+                      BLOCK
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-0.5 bg-transparent border-t-2 border-solid border-primaryClr/40"></span>
+                      SEAM
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-0.5 bg-transparent border-t-2 border-dashed border-primaryClr/40"></span>
+                      CONSTRUCTION
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => window.print()}
+                      className="hover:text-primaryClr font-bold transition-colors flex items-center gap-2 bg-primaryClr/5 border border-primaryClr/10 px-4 py-1.5 rounded-lg text-secondaryClr">
+                      ⎙ PRINT PATTERN
+                    </button>
+                  </div>
+                </div>
               </div>
+
             </div>
+
+            {/* Remove the redundant Measurement Summary Table completely since the sidebar handles it cleanly now */}
+            {/* Added Style Notes Back if any, displayed clearly */}
+            {selectedCustomer.styleNotes && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-2">
+                <div className="flex items-center gap-2 text-amber-700 text-xs font-bold uppercase tracking-widest mb-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Style Directives</span>
+                </div>
+                <p className="text-sm text-amber-900/80 font-medium">
+                  {selectedCustomer.styleNotes}
+                </p>
+              </div>
+            )}
+
+            {/* Workshop Instructions Panel removed as per user request */}
 
             <div className="pt-4 flex justify-between items-center gap-2 border-t border-secondaryClr/5">
               <p className="text-xs text-secondaryClr/40 font-mono">

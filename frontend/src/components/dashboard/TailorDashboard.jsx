@@ -86,86 +86,112 @@ const TailorDashboard = ({ user }) => {
   return (
     <div className="space-y-8 animate-fadeInUp">
       {/* Welcome Header */}
-      <div className="bg-primaryClr/5 p-6 rounded-3xl border border-primaryClr/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primaryClr text-white flex items-center justify-center shadow-lg shadow-primaryClr/20">
-            <Shirt size={24} />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-secondaryClr/5">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primaryClr/10 to-blue-500/10 rounded-full mb-3 border border-primaryClr/10">
+            <div className="p-1.5 bg-white rounded-full text-primaryClr shadow-sm">
+              <Shirt className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-widest text-primaryClr/80">Tailor Desk</span>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-primaryClr">Tailor Desk: Welcome, {user?.name}!</h1>
-            <p className="text-sm text-primaryClr/60">Your priority queue of cut garments waiting to be stitched.</p>
+          <h1 className="text-4xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-secondaryClr to-primaryClr">
+            Welcome, {user?.name}!
+          </h1>
+          <p className="mt-2 text-sm text-secondaryClr/50 font-medium">Your priority queue of cut garments waiting to be stitched.</p>
+        </div>
+        <div className="bg-white border border-secondaryClr/5 px-6 py-4 rounded-3xl shadow-xl shadow-primaryClr/5 flex items-center gap-6">
+          <div className="text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 block mb-1">Ready to Sew</span>
+            <p className="text-3xl font-black text-primaryClr">{orders.filter(o => o.status === 'cutting').length}</p>
+          </div>
+          <div className="w-px h-12 bg-gradient-to-b from-transparent via-secondaryClr/10 to-transparent" />
+          <div className="text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 block mb-1">In Progress</span>
+            <p className="text-3xl font-black text-amber-500">{orders.filter(o => o.status === 'sewing').length}</p>
           </div>
         </div>
       </div>
 
       {/* Stitching Queue Table */}
-      <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-primaryClr/5">
-        <h3 className="text-lg font-bold text-primaryClr mb-6">Stitching Queue (Sorted by Priority)</h3>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
-                <th className="px-6 py-4">Order #</th>
-                <th className="px-6 py-4">Due Date</th>
-                <th className="px-6 py-4">Garments</th>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Current Stage</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondaryClr/5">
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-secondaryClr/40 italic text-sm">
-                    No garments waiting for stitching.
-                  </td>
+      <div className="bg-white border border-secondaryClr/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-primaryClr/5">
+        <div className="px-8 py-6 border-b border-secondaryClr/5 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
+          <h2 className="text-xl font-black text-secondaryClr">Stitching Queue</h2>
+          <span className="text-xs font-bold text-primaryClr bg-primaryClr/10 px-4 py-2 rounded-full shadow-inner">
+            Sorted by Priority · {orders.length} Job{orders.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="py-24 text-center space-y-4">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center mx-auto text-emerald-500 shadow-inner">
+              <Shirt className="w-10 h-10 drop-shadow-sm" />
+            </div>
+            <h3 className="text-2xl font-black text-secondaryClr">All clear!</h3>
+            <p className="text-sm text-secondaryClr/50 max-w-sm mx-auto font-medium">No garments are currently waiting for stitching.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto p-4">
+            <table className="w-full text-left border-separate border-spacing-y-2">
+              <thead>
+                <tr className="text-secondaryClr/40 uppercase tracking-widest text-[10px] font-black">
+                  <th className="px-6 py-3 pl-8">Order #</th>
+                  <th className="px-6 py-3">Due Date</th>
+                  <th className="px-6 py-3">Garments</th>
+                  <th className="px-6 py-3">Customer</th>
+                  <th className="px-6 py-3">Stage</th>
+                  <th className="px-6 py-3 text-right pr-8">Actions</th>
                 </tr>
-              ) : (
-                orders.map((order) => (
-                  <tr key={order._id} className="hover:bg-secondaryClr/[0.01] transition-colors">
-                    <td className="px-6 py-4 font-bold text-primaryClr">{order.orderNumber}</td>
-                    <td className="px-6 py-4">
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order._id} className="group bg-white hover:bg-slate-50/50 transition-all duration-300 shadow-sm hover:shadow-md rounded-2xl">
+                    <td className="px-6 py-5 pl-8 font-black text-primaryClr/80 rounded-l-2xl border-y border-l border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      {order.orderNumber}
+                    </td>
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
                       {getUrgencyBadge(order.dueDate)}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <div className="flex flex-wrap gap-2">
                         {order.items.map((item, idx) => (
-                          <div key={idx} className="text-xs font-semibold">
+                          <span key={idx} className="inline-flex items-center gap-1.5 bg-slate-100/80 text-secondaryClr/80 text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border border-secondaryClr/5 shadow-sm">
                             {item.quantity}x {item.itemType}
-                            {item.notes && <p className="text-[10px] text-secondaryClr/50 italic">{item.notes}</p>}
-                          </div>
+                          </span>
                         ))}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-sm text-secondaryClr">{order.customer?.name}</p>
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="text-xs text-primaryClr hover:underline flex items-center gap-1 mt-1"
-                      >
-                        <Maximize2 size={12} /> Design Notes
-                      </button>
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primaryClr/20 to-primaryClr/5 flex items-center justify-center text-primaryClr font-bold text-xs shadow-inner">
+                          {(order.customer?.name || 'W').charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-secondaryClr">{order.customer?.name}</p>
+                          <button onClick={() => setSelectedOrder(order)} className="text-[10px] text-primaryClr hover:text-primaryClr/70 flex items-center gap-1 mt-0.5 font-bold transition-colors">
+                            <Maximize2 size={10} /> View Notes
+                          </button>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${order.status === 'cutting' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {order.status}
+                    <td className="px-6 py-5 border-y border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
+                      <span className={`inline-flex items-center text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl shadow-sm border ${order.status === 'cutting' ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border-blue-200' : 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border-amber-200'}`}>
+                        {order.status === 'cutting' ? 'Ready to Sew' : 'Sewing'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-5 pr-8 text-right rounded-r-2xl border-y border-r border-secondaryClr/5 group-hover:border-primaryClr/20 transition-colors">
                       <button
                         onClick={() => handleOpenStatusModal(order)}
-                        className="px-3 py-1.5 bg-primaryClr/10 hover:bg-primaryClr text-primaryClr hover:text-white rounded-lg text-xs font-bold transition-all"
+                        className="px-4 py-2 bg-gradient-to-r from-primaryClr to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-primaryClr/20 hover:shadow-lg hover:-translate-y-0.5"
                       >
                         Update Stage
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Design Details / Notes Modal */}
@@ -181,14 +207,37 @@ const TailorDashboard = ({ user }) => {
               <p className="text-sm font-medium text-amber-900">{selectedOrder.notes || 'No special order notes.'}</p>
             </div>
 
-            <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/60 pt-2">Measurements (inches)</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Object.entries(selectedOrder.customer?.measurements || {}).map(([key, val]) => (
-                <div key={key} className="bg-primaryClr/5 border border-primaryClr/10 p-3 rounded-2xl text-center">
-                  <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">{key}</span>
-                  <p className="text-lg font-black text-primaryClr mt-0.5">{val}"</p>
-                </div>
-              ))}
+            <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/60 pt-2">Measurements (cm)</h4>
+            <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4">
+              {[
+                { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
+                { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
+                { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
+                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+              ].map(group => {
+                const groupMeasurements = group.keys.reduce((acc, k) => {
+                  if (selectedOrder.customer?.measurements?.[k]) acc[k] = selectedOrder.customer.measurements[k];
+                  return acc;
+                }, {});
+
+                if (Object.keys(groupMeasurements).length === 0) return null;
+
+                return (
+                  <div key={group.title}>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 mb-2">{group.title}</h5>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {Object.entries(groupMeasurements).map(([key, val]) => (
+                        <div key={key} className="bg-primaryClr/5 border border-primaryClr/10 p-3 rounded-2xl text-center">
+                          <span className="text-[9px] uppercase font-black tracking-wider text-secondaryClr/40 truncate block w-full" title={key.replace(/([A-Z])/g, ' $1').trim()}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                          <p className="text-sm font-black text-primaryClr mt-0.5">{val} cm</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div className="pt-4 text-right">
               <Button onClick={() => setSelectedOrder(null)}>Close Details</Button>

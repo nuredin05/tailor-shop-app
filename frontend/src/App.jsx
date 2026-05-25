@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import { DarkModeProvider } from './context/DarkModeContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -21,6 +22,7 @@ import ExpensesPage from './pages/ExpensesPage'
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <DarkModeProvider>
         <AuthProvider>
           <Routes>
@@ -111,11 +113,11 @@ function App() {
             path="/users"
             element={
               <ProtectedRoute>
-                <AdminRoute>
+                <RoleRoute allowedRoles={['manager', 'admin']}>
                   <Layout>
                     <UsersPage />
                   </Layout>
-                </AdminRoute>
+                </RoleRoute>
               </ProtectedRoute>
             }
           />

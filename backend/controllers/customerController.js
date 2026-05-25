@@ -71,8 +71,26 @@ const createCustomer = async (req, res) => {
   }
 }
 
+// @desc    Delete a customer
+// @route   DELETE /api/customers/:id
+// @access  Protected (Manager)
+const deleteCustomer = async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.params.id)
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' })
+    }
+
+    await customer.deleteOne()
+    res.json({ message: 'Customer removed successfully' })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
 module.exports = {
   getCustomers,
   getCustomerById,
-  createCustomer
+  createCustomer,
+  deleteCustomer
 }

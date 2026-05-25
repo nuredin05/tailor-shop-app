@@ -19,7 +19,12 @@ const DashboardPage = () => {
       case 'admin':
         return <AdminDashboard user={user} />;
       case 'manager':
-        return <ManagerDashboard user={user} />;
+        return (
+          <div className="flex flex-col gap-12">
+            <ManagerDashboard user={user} />
+            <OfficerDashboard user={user} hideHeader={true} />
+          </div>
+        );
       case 'officer':
         return <OfficerDashboard user={user} />;
       case 'cutter':

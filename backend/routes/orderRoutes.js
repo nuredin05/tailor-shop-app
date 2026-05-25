@@ -7,7 +7,8 @@ const {
   processOrderPayment,
   updateOrderStatus,
   reassignOrder,
-  getShopMetrics
+  getShopMetrics,
+  deleteOrder
 } = require('../controllers/orderController')
 const { protect, manager, officer, shopStaff } = require('../middleware/authMiddleware')
 
@@ -20,6 +21,7 @@ router.route('/metrics')
 
 router.route('/:id')
   .get(protect, getOrderById)
+  .delete(protect, manager, deleteOrder)
 
 router.route('/:id/status')
   .put(protect, shopStaff, updateOrderStatus)

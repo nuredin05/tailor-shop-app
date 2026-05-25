@@ -27,6 +27,7 @@ const ExpensesPage = () => {
   const [category, setCategory] = useState('materials');
   const [employeeId, setEmployeeId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     fetchExpensesData();
@@ -35,13 +36,15 @@ const ExpensesPage = () => {
   const fetchExpensesData = async () => {
     try {
       setLoading(true);
-      const [expensesRes, usersRes] = await Promise.all([
+      const [expensesRes, usersRes, ordersRes] = await Promise.all([
         api.get('/expenses'),
-        api.get('/auth/users')
+        api.get('/auth/users'),
+        api.get('/orders')
       ]);
       setExpenses(expensesRes.data);
+      setOrders(ordersRes.data);
       // Filter for cutters / employee types
-      setEmployees(usersRes.data.filter(u => u.role === 'cutter' || u.role === 'admin'));
+      setEmployees(usersRes.data.filter(u => u.role === 'cutter' || u.role === 'admin' || u.role === 'tailor'));
     } catch (err) {
       console.error(err);
     } finally {
@@ -91,6 +94,24 @@ const ExpensesPage = () => {
 
   const totalExpenseSum = expenses.reduce((acc, exp) => acc + exp.amount, 0);
 
+  // Calculate Current Month Net Profit
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const monthlyExpenses = expenses.filter(e => new Date(e.date) >= thirtyDaysAgo);
+  const monthlyOutflow = monthlyExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+
+  // Revenue from orders (using the actual amountPaid on recent orders)
+  const monthlyRevenue = orders.reduce((acc, order) => {
+    const orderDate = new Date(order.createdAt);
+    if (orderDate >= thirtyDaysAgo) {
+      return acc + (order.amountPaid || 0);
+    }
+    return acc;
+  }, 0);
+
+  const netProfit = monthlyRevenue - monthlyOutflow;
+
   if (loading && expenses.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -102,7 +123,15 @@ const ExpensesPage = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Stat Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card 
+          title="Net Profit (30 Days)" 
+          value={`${netProfit.toLocaleString()} Birr`} 
+          trend={netProfit >= 0 ? TrendingDown : AlertTriangle} 
+          trendColor={netProfit >= 0 ? "text-green-500" : "text-red-500"}
+          changes="Revenue minus costs"
+          className={netProfit >= 0 ? "border-green-100 bg-green-50/30" : "border-red-100 bg-red-50/30"}
+        />
         <Card 
           title="Total Operating Costs" 
           value={`${totalExpenseSum.toLocaleString()} Birr`} 
@@ -111,9 +140,9 @@ const ExpensesPage = () => {
           changes="Total outflow logged"
         />
         <Card 
-          title="Materials & Fabric costs" 
+          title="Materials & Fabric" 
           value={`${expenses.filter(e => e.category === 'materials').reduce((a, b) => a + b.amount, 0).toLocaleString()} Birr`} 
-          changes="Active inventory expense"
+          changes="Active inventory"
         />
         <Card 
           title="Payroll logged" 

@@ -350,6 +350,23 @@ const getShopMetrics = async (req, res) => {
   }
 }
 
+// @desc    Delete an order
+// @route   DELETE /api/orders/:id
+// @access  Protected (Manager)
+const deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+
+    await order.deleteOne()
+    res.json({ message: 'Order removed successfully' })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
 module.exports = {
   getOrders,
   getOrderById,
@@ -357,5 +374,6 @@ module.exports = {
   processOrderPayment,
   updateOrderStatus,
   reassignOrder,
-  getShopMetrics
+  getShopMetrics,
+  deleteOrder
 }

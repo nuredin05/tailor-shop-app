@@ -1,6 +1,11 @@
 const mongoose = require('mongoose')
 
-const ALL_MEASUREMENTS = ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length']
+const ALL_MEASUREMENTS = [
+  'chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length',
+  'fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck',
+  'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack',
+  'bicep', 'capHeight', 'bottomWidth'
+]
 
 const pricingSchema = new mongoose.Schema(
   {

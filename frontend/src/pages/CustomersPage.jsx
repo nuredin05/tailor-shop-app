@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import { toast } from 'react-hot-toast';
 import Card from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -18,18 +20,27 @@ import {
 } from 'lucide-react';
 
 const CustomersPage = () => {
+  const { user } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGarmentType, setSelectedGarmentType] = useState('All');
   
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
 
   // Form state
+  const initialMeasurements = {
+    chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0,
+    fullLengthBack: 0, fullLengthFront: 0, acrossChest: 0, acrossShoulder: 0, shoulderLength: 0, centerLength: 0, shoulderSlope: 0, acrossBack: 0, backNeck: 0,
+    pantLength: 0, crotchDepth: 0, hipDepth: 0, waistArcFront: 0, waistArcBack: 0, hipArcFront: 0, hipArcBack: 0,
+    bicep: 0, capHeight: 0
+  };
+
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', address: '',
-    chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0
+    name: '', email: '', phone: '', address: '', ...initialMeasurements
   });
 
   useEffect(() => {
@@ -57,14 +68,14 @@ const CustomersPage = () => {
         phone: form.phone,
         address: form.address,
         measurements: {
-          chest: Number(form.chest),
-          waist: Number(form.waist),
-          hips: Number(form.hips),
-          shoulder: Number(form.shoulder),
-          sleeves: Number(form.sleeves),
-          inseam: Number(form.inseam),
-          neck: Number(form.neck),
-          length: Number(form.length)
+          chest: Number(form.chest), waist: Number(form.waist), hips: Number(form.hips), shoulder: Number(form.shoulder),
+          sleeves: Number(form.sleeves), inseam: Number(form.inseam), neck: Number(form.neck), length: Number(form.length),
+          fullLengthBack: Number(form.fullLengthBack), fullLengthFront: Number(form.fullLengthFront), acrossChest: Number(form.acrossChest),
+          acrossShoulder: Number(form.acrossShoulder), shoulderLength: Number(form.shoulderLength), centerLength: Number(form.centerLength),
+          shoulderSlope: Number(form.shoulderSlope), acrossBack: Number(form.acrossBack), backNeck: Number(form.backNeck),
+          pantLength: Number(form.pantLength), crotchDepth: Number(form.crotchDepth), hipDepth: Number(form.hipDepth),
+          waistArcFront: Number(form.waistArcFront), waistArcBack: Number(form.waistArcBack), hipArcFront: Number(form.hipArcFront), hipArcBack: Number(form.hipArcBack),
+          bicep: Number(form.bicep), capHeight: Number(form.capHeight)
         }
       };
 
@@ -72,13 +83,29 @@ const CustomersPage = () => {
       setCustomers([res.data, ...customers]);
       setIsModalOpen(false);
       setForm({
-        name: '', email: '', phone: '', address: '',
-        chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0
+        name: '', email: '', phone: '', address: '', ...initialMeasurements
       });
-      alert('Customer created successfully');
+      toast.success('Customer created successfully');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to create customer');
+      toast.error(err.response?.data?.message || 'Failed to create customer');
+    }
+  };
+
+  const confirmDeleteCustomer = (id) => {
+    setCustomerToDelete(id);
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    try {
+      await api.delete(`/customers/${customerToDelete}`);
+      setCustomers(customers.filter(c => c._id !== customerToDelete));
+      setCustomerToDelete(null);
+      toast.success('Customer profile deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to delete customer');
     }
   };
 
@@ -166,11 +193,20 @@ const CustomersPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setSelectedCustomer(customer)}
-                className="w-full py-2.5 bg-primaryClr/5 hover:bg-primaryClr hover:text-white text-primaryClr rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-primaryClr/5 hover:bg-primaryClr hover:text-white text-primaryClr rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
               >
                 <Maximize2 size={12} />
                 Measurements Detail
               </button>
+              {user?.role === 'manager' && (
+                <button
+                  onClick={() => confirmDeleteCustomer(customer._id)}
+                  className="px-4 py-2.5 bg-red-50 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center"
+                  title="Delete Customer"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -195,14 +231,37 @@ const CustomersPage = () => {
               <div className="col-span-2">Address: <span className="font-bold text-secondaryClr">{selectedCustomer.address || 'None'}</span></div>
             </div>
 
-            <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/60 pt-2">Specs (inches)</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Object.entries(selectedCustomer.measurements || {}).map(([key, val]) => (
-                <div key={key} className="bg-primaryClr/5 border border-primaryClr/10 p-3 rounded-2xl text-center">
-                  <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">{key}</span>
-                  <p className="text-lg font-black text-primaryClr mt-0.5">{val}"</p>
-                </div>
-              ))}
+            <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/60 pt-2">Specs (cm)</h4>
+            <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4">
+              {[
+                { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
+                { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
+                { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
+                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+              ].map(group => {
+                const groupMeasurements = group.keys.reduce((acc, k) => {
+                  if (selectedCustomer.measurements?.[k] !== undefined) acc[k] = selectedCustomer.measurements[k];
+                  return acc;
+                }, {});
+
+                if (Object.keys(groupMeasurements).length === 0) return null;
+
+                return (
+                  <div key={group.title}>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 mb-2">{group.title}</h5>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {Object.entries(groupMeasurements).map(([key, val]) => (
+                        <div key={key} className="bg-primaryClr/5 border border-primaryClr/10 p-3 rounded-2xl text-center">
+                          <span className="text-[9px] uppercase font-black tracking-wider text-secondaryClr/40 truncate block w-full" title={key.replace(/([A-Z])/g, ' $1').trim()}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                          <p className="text-lg font-black text-primaryClr mt-0.5">{val} cm</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="pt-4 text-right">
@@ -250,22 +309,70 @@ const CustomersPage = () => {
           </div>
 
           <div className="border-t border-secondaryClr/10 pt-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/50 mb-3">Custom Measurements Specs (inches)</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'].map(key => (
-                <div key={key}>
-                  <label className="block text-[10px] font-black text-secondaryClr/40 uppercase tracking-widest mb-1">{key}</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="0.0"
-                    className="w-full bg-primaryClr/5 border-0 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
-                    value={form[key]}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  />
-                </div>
-              ))}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/50">Custom Measurements Specs (cm)</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-secondaryClr/40 uppercase tracking-widest">Garment Type:</span>
+                <select
+                  value={selectedGarmentType}
+                  onChange={(e) => setSelectedGarmentType(e.target.value)}
+                  className="bg-primaryClr/5 border border-primaryClr/10 rounded-xl px-2 py-1 text-xs font-bold text-primaryClr focus:outline-none"
+                >
+                  <option value="All">All Fields</option>
+                  <option value="Suit">Suit</option>
+                  <option value="Shirt">Shirt</option>
+                  <option value="Trousers">Trousers</option>
+                  <option value="Dress">Dress</option>
+                  <option value="Coat">Coat</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="max-h-[40vh] overflow-y-auto pr-2 space-y-4 pb-4">
+              {[
+                { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
+                { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
+                { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
+                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+              ].map(group => {
+                const visibleKeys = group.keys.filter(key => {
+                  if (selectedGarmentType === 'All') return true;
+                  const mapping = {
+                    Suit: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'neck', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack', 'bicep', 'capHeight'],
+                    Shirt: ['chest', 'shoulder', 'sleeves', 'neck', 'length', 'fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'],
+                    Trousers: ['waist', 'hips', 'inseam', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'],
+                    Dress: ['chest', 'waist', 'hips', 'shoulder', 'length'],
+                    Coat: ['chest', 'waist', 'shoulder', 'sleeves', 'length', 'bicep', 'capHeight']
+                  };
+                  return mapping[selectedGarmentType]?.includes(key);
+                });
+
+                if (visibleKeys.length === 0) return null;
+
+                return (
+                  <div key={group.title} className="bg-backgroundClr/30 p-4 rounded-2xl border border-secondaryClr/5">
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-primaryClr/70 mb-3">{group.title}</h5>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {visibleKeys.map(key => (
+                        <div key={key}>
+                          <label className="block text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider mb-1 truncate" title={key.replace(/([A-Z])/g, ' $1').trim()}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            placeholder="0.0"
+                            className="w-full bg-white border border-secondaryClr/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20 transition-all"
+                            value={form[key] || ''}
+                            onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -286,6 +393,36 @@ const CustomersPage = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!customerToDelete}
+        onClose={() => setCustomerToDelete(null)}
+        title="Confirm Deletion"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-secondaryClr/70 font-semibold">
+            Are you sure you want to delete this customer profile? This action cannot be undone and will permanently remove all associated measurement data.
+          </p>
+          <div className="pt-4 flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCustomerToDelete(null)}
+              className="w-1/2"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteCustomer}
+              className="w-1/2 bg-red-600 hover:bg-red-700 border-red-600 text-white shadow-lg shadow-red-600/20"
+            >
+              Delete Profile
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

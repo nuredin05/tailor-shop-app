@@ -27,6 +27,12 @@ const ManagerDashboard = ({ user }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [targetEmployeeId, setTargetEmployeeId] = useState('');
   const [error, setError] = useState(null);
+  // All-orders assign modal
+  const [allOrders, setAllOrders] = useState([]);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assigningOrder, setAssigningOrder] = useState(null);
+  const [assignEmployeeId, setAssignEmployeeId] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -37,15 +43,19 @@ const ManagerDashboard = ({ user }) => {
       setLoading(true);
       setError(null);
       
-      // Fetch shop metrics
-      const metricsRes = await api.get('/orders/metrics');
+      // Fetch shop metrics & all orders
+      const [metricsRes, ordersRes] = await Promise.all([
+        api.get('/orders/metrics'),
+        api.get('/orders')
+      ]);
       setMetrics(metricsRes.data);
+      setAllOrders(ordersRes.data);
 
       // Fetch employees for reassignment list
       const usersRes = await api.get('/auth/users');
-      // Filter users with role cutter
-      const cutters = usersRes.data.filter(u => u.role === 'cutter' || u.role === 'admin');
-      setEmployees(cutters);
+      // Include all production staff: cutter, tailor, admin
+      const staff = usersRes.data.filter(u => ['cutter', 'tailor', 'admin'].includes(u.role));
+      setEmployees(staff);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch dashboard metrics. Please reload.');
@@ -78,6 +88,35 @@ const ManagerDashboard = ({ user }) => {
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to reassign order');
+    }
+  };
+
+  const openAssignModal = (order) => {
+    setAssigningOrder(order);
+    setAssignEmployeeId(order.assignedTo?._id || '');
+    setIsAssignModalOpen(true);
+  };
+
+  const handleAssignSubmit = async (e) => {
+    e.preventDefault();
+    if (!assigningOrder) return;
+    setAssignLoading(true);
+    try {
+      const res = await api.put(`/orders/${assigningOrder._id}/assign`, {
+        employeeId: assignEmployeeId || null
+      });
+      // Update allOrders list with new assignment
+      setAllOrders(prev => prev.map(o => o._id === assigningOrder._id
+        ? { ...o, assignedTo: employees.find(e => e._id === assignEmployeeId) || null }
+        : o
+      ));
+      setIsAssignModalOpen(false);
+      setAssigningOrder(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to assign tailor');
+    } finally {
+      setAssignLoading(false);
     }
   };
 
@@ -336,25 +375,96 @@ const ManagerDashboard = ({ user }) => {
         </div>
       </div>
 
-      {/* Task Reassignment Modal */}
+      {/* All Orders — Assign Tailor Table */}
+      <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-primaryClr/5">
+        <h3 className="text-lg font-bold text-primaryClr mb-6 flex items-center gap-3">
+          <div className="p-2 bg-primaryClr/10 rounded-lg text-primaryClr">
+            <UserCheck size={20} />
+          </div>
+          Assign Tailors to Active Orders
+        </h3>
+
+        {allOrders.length === 0 ? (
+          <div className="py-12 text-center text-secondaryClr/40 italic text-sm bg-backgroundClr/10 rounded-2xl border border-dashed border-secondaryClr/10">
+            No active orders found.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
+                  <th className="px-6 py-4">Order #</th>
+                  <th className="px-6 py-4">Customer</th>
+                  <th className="px-6 py-4">Stage</th>
+                  <th className="px-6 py-4">Assigned Tailor</th>
+                  <th className="px-6 py-4">Due Date</th>
+                  <th className="px-6 py-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-secondaryClr/5">
+                {allOrders.map((order) => (
+                  <tr key={order._id} className="hover:bg-secondaryClr/[0.01] transition-colors">
+                    <td className="px-6 py-4 font-bold text-primaryClr">{order.orderNumber}</td>
+                    <td className="px-6 py-4 font-semibold text-sm">
+                      {order.customer?.name || 'Unknown'}
+                      <p className="text-xs text-secondaryClr/50">{order.customer?.phone}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                        order.status === 'cutting' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'sewing' ? 'bg-amber-100 text-amber-700' :
+                        order.status === 'fitting' ? 'bg-purple-100 text-purple-700' :
+                        order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>{order.status}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {order.assignedTo ? (
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-primaryClr">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          {order.assignedTo.name}
+                          <span className="text-[10px] text-secondaryClr/50 font-normal">({order.assignedTo.role})</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-secondaryClr/40 italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-semibold text-secondaryClr/70">
+                      {order.dueDate ? new Date(order.dueDate).toLocaleDateString() : '—'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => openAssignModal(order)}
+                        className="px-3 py-1.5 bg-primaryClr/10 hover:bg-primaryClr text-primaryClr hover:text-white rounded-lg text-xs font-bold transition-all"
+                      >
+                        {order.assignedTo ? 'Reassign' : 'Assign Tailor'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Overdue Bottleneck Task Reassignment Modal */}
       <Modal
         isOpen={reassigning}
         onClose={() => { setReassigning(false); setSelectedOrder(null); }}
-        title={`Reassign Production Task: ${selectedOrder?.orderNumber}`}
+        title={`Reassign Overdue Task: ${selectedOrder?.orderNumber}`}
       >
         <form onSubmit={handleReassignSubmit} className="space-y-4">
           <div className="p-4 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 flex items-start gap-3">
             <AlertTriangle className="shrink-0 mt-0.5" size={18} />
             <div className="text-xs">
               <p className="font-bold">Overdue Alert</p>
-              <p className="mt-0.5">This task is currently assigned to <span className="font-bold">{selectedOrder?.assignedTo?.name || 'Unassigned'}</span>. Changing assignment updates work schedules immediately.</p>
+              <p className="mt-0.5">Currently assigned to <span className="font-bold">{selectedOrder?.assignedTo?.name || 'Unassigned'}</span>. Changing assignment updates work schedules immediately.</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">
-              Select Tailor / Cutter
-            </label>
+            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">Select Tailor / Cutter</label>
             <select
               value={targetEmployeeId}
               onChange={(e) => setTargetEmployeeId(e.target.value)}
@@ -363,27 +473,52 @@ const ManagerDashboard = ({ user }) => {
             >
               <option value="">-- Unassigned --</option>
               {employees.map(emp => (
-                <option key={emp._id} value={emp._id}>
-                  {emp.name} ({emp.role})
-                </option>
+                <option key={emp._id} value={emp._id}>{emp.name} ({emp.role})</option>
               ))}
             </select>
           </div>
 
           <div className="pt-4 flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => { setReassigning(false); setSelectedOrder(null); }}
-              className="w-1/2"
+            <Button type="button" variant="outline" onClick={() => { setReassigning(false); setSelectedOrder(null); }} className="w-1/2">Cancel</Button>
+            <Button type="submit" className="w-1/2">Assign Tailor</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Direct Assign Tailor Modal (all orders) */}
+      <Modal
+        isOpen={isAssignModalOpen}
+        onClose={() => { setIsAssignModalOpen(false); setAssigningOrder(null); }}
+        title={`Assign Tailor: ${assigningOrder?.orderNumber}`}
+      >
+        <form onSubmit={handleAssignSubmit} className="space-y-5">
+          <div className="p-4 bg-primaryClr/5 rounded-xl border border-primaryClr/10 text-sm">
+            <p className="text-xs text-secondaryClr/60">Customer</p>
+            <p className="font-bold text-primaryClr">{assigningOrder?.customer?.name || '—'}</p>
+            <p className="text-xs text-secondaryClr/50 mt-1">Current stage: <span className="font-bold capitalize">{assigningOrder?.status}</span></p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">Assign to Tailor / Cutter</label>
+            <select
+              value={assignEmployeeId}
+              onChange={(e) => setAssignEmployeeId(e.target.value)}
+              className="w-full bg-primaryClr/5 border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="w-1/2"
-            >
-              Assign Tailor
+              <option value="">-- Remove Assignment --</option>
+              {employees.map(emp => (
+                <option key={emp._id} value={emp._id}>
+                  {emp.name} — {emp.role.charAt(0).toUpperCase() + emp.role.slice(1)}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-secondaryClr/40 mt-2">Select a tailor or cutter from your production staff.</p>
+          </div>
+
+          <div className="pt-2 flex gap-3">
+            <Button type="button" variant="outline" onClick={() => { setIsAssignModalOpen(false); setAssigningOrder(null); }} className="w-1/2">Cancel</Button>
+            <Button type="submit" className="w-1/2" disabled={assignLoading}>
+              {assignLoading ? <Loader2 className="animate-spin mx-auto" size={18} /> : 'Confirm Assignment'}
             </Button>
           </div>
         </form>

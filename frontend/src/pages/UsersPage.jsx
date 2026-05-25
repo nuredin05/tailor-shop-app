@@ -44,7 +44,7 @@ const UsersPage = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user',
+    role: 'customer',
     phone: ''
   });
 
@@ -66,7 +66,7 @@ const UsersPage = () => {
       const response = await api.post('/auth/users', newUser);
       setUsers([response.data, ...users]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', password: '', role: 'user', phone: '' });
+      setNewUser({ name: '', email: '', password: '', role: 'customer', phone: '' });
       showStatus('User created successfully', 'success');
     } catch (err) {
       showStatus(err.response?.data?.message || 'Failed to create user', 'error');
@@ -221,17 +221,17 @@ const UsersPage = () => {
           changes={`${users.length > 0 ? '+100%' : '0%'}`}
         />
         <Card 
-          title="Admins" 
-          value={users.filter(u => u.role === 'admin').length} 
-          trend={UserCheck} 
+          title="Staff Members" 
+          value={users.filter(u => ['admin', 'manager', 'officer', 'cutter', 'tailor'].includes(u.role)).length} 
+          trend={Shield} 
           trendColor="text-blue-600"
           changes="Active"
         />
         <Card 
-          title="Super Admins" 
-          value={users.filter(u => u.role === 'superadmin').length} 
-          trend={Shield} 
-          trendColor="text-purple-600"
+          title="Customers" 
+          value={users.filter(u => u.role === 'customer').length} 
+          trend={UserCheck} 
+          trendColor="text-green-600"
           changes="System"
         />
       </div>
@@ -321,19 +321,21 @@ const UsersPage = () => {
                     <td className="px-6 py-4">
                       <select
                         value={u.role}
-                        disabled={u._id === currentUser._id || (u.role === 'superadmin' && currentUser.role !== 'superadmin')}
+                        disabled={u._id === currentUser._id || (u.role === 'admin' && currentUser.role !== 'admin')}
                         onChange={(e) => handleRoleChange(u._id, e.target.value)}
                         className={`text-xs font-bold px-3 py-1.5 rounded-full border-0 focus:ring-2 focus:ring-primaryClr/20 cursor-pointer appearance-none ${
-                          u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
-                          u.role === 'admin' ? 'bg-blue-100 text-blue-700' :
+                          u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                          u.role === 'manager' ? 'bg-blue-100 text-blue-700' :
+                          ['cutter', 'tailor'].includes(u.role) ? 'bg-amber-100 text-amber-700' :
                           'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        <option value="user">User</option>
+                        <option value="customer">Customer</option>
+                        <option value="cutter">Cutter</option>
+                        <option value="tailor">Tailor</option>
+                        <option value="officer">Officer</option>
+                        <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="student">Student</option>
-                        {currentUser.role === 'superadmin' && <option value="superadmin">Super Admin</option>}
                       </select>
                     </td>
                     <td className="px-6 py-4">
@@ -429,11 +431,12 @@ const UsersPage = () => {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="w-full bg-primaryClr/5 border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
             >
-              <option value="user">User</option>
+              <option value="customer">Customer</option>
+              <option value="cutter">Cutter</option>
+              <option value="tailor">Tailor</option>
+              <option value="officer">Officer</option>
+              <option value="manager">Manager</option>
               <option value="admin">Admin</option>
-              <option value="teacher">Teacher</option>
-              <option value="student">Student</option>
-              {currentUser.role === 'superadmin' && <option value="superadmin">Super Admin</option>}
             </select>
           </div>
           <div className="pt-4">
@@ -483,11 +486,12 @@ const UsersPage = () => {
               onChange={(e) => setEditUser({ ...editUser, role: e.target.value })}
               className="w-full bg-primaryClr/5 border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
             >
-              <option value="user">User</option>
+              <option value="customer">Customer</option>
+              <option value="cutter">Cutter</option>
+              <option value="tailor">Tailor</option>
+              <option value="officer">Officer</option>
+              <option value="manager">Manager</option>
               <option value="admin">Admin</option>
-              <option value="teacher">Teacher</option>
-              <option value="student">Student</option>
-              {currentUser.role === 'superadmin' && <option value="superadmin">Super Admin</option>}
             </select>
           </div>
           <div className="pt-4">
