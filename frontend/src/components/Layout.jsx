@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import {
   Users,
@@ -24,6 +25,7 @@ import {
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [notifications, setNotifications] = useState([]);
@@ -109,12 +111,12 @@ const Layout = ({ children }) => {
   };
 
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] },
-    { name: 'Customers', icon: Users, path: '/customers', roles: ['admin', 'superadmin', 'manager', 'officer'] },
-    { name: 'Pricing', icon: ClipboardList, path: '/pricing', roles: ['admin', 'superadmin', 'manager'] },
-    { name: 'Users', icon: Users, path: '/users', roles: ['admin', 'superadmin', 'manager'] },
-    { name: 'Costs & Payroll', icon: BarChart3, path: '/expenses', roles: ['admin', 'superadmin', 'manager'] },
-    { name: 'Settings', icon: Settings, path: '/settings', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] }
+    { name: t('nav.dashboard'), icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] },
+    { name: t('nav.customers'), icon: Users, path: '/customers', roles: ['admin', 'superadmin', 'manager', 'officer'] },
+    { name: t('nav.pricing'), icon: ClipboardList, path: '/pricing', roles: ['admin', 'superadmin', 'manager'] },
+    { name: t('nav.users'), icon: Users, path: '/users', roles: ['admin', 'superadmin', 'manager'] },
+    { name: t('nav.expenses'), icon: BarChart3, path: '/expenses', roles: ['admin', 'superadmin', 'manager'] },
+    { name: t('nav.settings'), icon: Settings, path: '/settings', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] }
   ];
 
   const userRole = user?.role || 'user';
@@ -193,7 +195,7 @@ const Layout = ({ children }) => {
               title={isSidebarCollapsed ? 'Sign Out' : ''}
             >
               <LogOut size={20} className="shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fadeIn">Sign Out</span>}
+              {!isSidebarCollapsed && <span className="animate-fadeIn">{t('nav.signOut')}</span>}
             </button>
           </div>
         </div>

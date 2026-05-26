@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useDarkMode } from '../context/DarkModeContext'
+import { useTranslation } from 'react-i18next'
 import { updateProfile } from '../services/authService'
 import Input from '../components/ui/Input'
 import { Button, Button1, BtnWarning } from '../components/ui/Button'
@@ -12,6 +13,7 @@ import {
 const SettingsPage = () => {
   const { user, updateUser } = useAuth()
   const { isDarkMode, setTheme, themeMode } = useDarkMode()
+  const { t, i18n } = useTranslation()
   const [activeTab, setActiveTab] = useState('profile')
   const [showPassword, setShowPassword] = useState(false)
   const fileInputRef = useRef(null)
@@ -125,10 +127,11 @@ const SettingsPage = () => {
   }
 
   const tabs = [
-    { id: 'profile', name: 'Account Profile', icon: User },
+    { id: 'profile', name: t('settings.title') + ' — ' + 'Account Profile', icon: User },
     { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'security', name: 'Security & Privacy', icon: Shield },
-    { id: 'display', name: 'Display Theme', icon: Moon }
+    { id: 'language', name: t('settings.language'), icon: Globe },
+    { id: 'display', name: 'Display Theme', icon: Moon },
+    { id: 'security', name: 'Security & Privacy', icon: Shield }
   ]
 
   const getImageSrc = () => {
@@ -358,6 +361,46 @@ const SettingsPage = () => {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'language' && (
+        <div className="space-y-8 animate-fadeInUp">
+          <div className="p-6 bg-primaryClr/5 rounded-3xl border border-primaryClr/10">
+            <h3 className="font-bold text-primaryClr mb-2 flex items-center gap-2">
+              <Globe size={18} /> {t('settings.language')}
+            </h3>
+            <p className="text-xs text-primaryClr/60 leading-relaxed">Choose your preferred interface language. All labels and navigation will update instantly.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {[
+              { code: 'en', label: 'English', sublabel: 'English (Default)', flag: '🇬🇧' },
+              { code: 'am', label: 'አማርኛ', sublabel: 'Amharic (Ethiopian)', flag: '🇪🇹' }
+            ].map(lang => {
+              const isActive = i18n.language === lang.code;
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => i18n.changeLanguage(lang.code)}
+                  className={`p-6 rounded-[2rem] border-2 flex items-center gap-5 transition-all text-left ${
+                    isActive
+                      ? 'border-primaryClr bg-primaryClr/5 shadow-lg shadow-primaryClr/10'
+                      : 'border-primaryClr/5 bg-backgroundClr/30 hover:border-primaryClr/20'
+                  }`}
+                >
+                  <span className="text-4xl">{lang.flag}</span>
+                  <div>
+                    <p className={`font-black text-lg tracking-tight ${isActive ? 'text-primaryClr' : 'text-secondaryClr'}`}>{lang.label}</p>
+                    <p className="text-xs text-secondaryClr/50 mt-0.5">{lang.sublabel}</p>
+                    {isActive && (
+                      <span className="inline-block mt-2 text-[10px] font-black uppercase tracking-widest text-primaryClr bg-primaryClr/10 px-2 py-0.5 rounded-full">Active</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

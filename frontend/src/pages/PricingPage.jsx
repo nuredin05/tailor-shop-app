@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import Card from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -17,6 +18,7 @@ import {
 const ALL_MEASUREMENTS = ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'];
 
 const PricingPage = () => {
+  const { t } = useTranslation();
   const [pricings, setPricings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,7 +112,7 @@ const PricingPage = () => {
     <div className="space-y-6 animate-fadeIn">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-primaryClr">Garments Pricing</h1>
+          <h1 className="text-2xl font-display font-bold text-primaryClr">{t('pricing.title')}</h1>
           <p className="text-secondaryClr/60 text-sm">Review base catalog costs, timeline estimates, and required measurements per garment.</p>
         </div>
         <button
@@ -118,7 +120,7 @@ const PricingPage = () => {
           className="flex items-center gap-2 px-4 py-2.5 bg-primaryClr text-white rounded-xl transition-all font-bold text-sm shadow-lg shadow-primaryClr/20 hover:scale-105 active:scale-95"
         >
           <Plus size={18} />
-          Add Garment Service
+          {t('pricing.addItem')}
         </button>
       </div>
 
@@ -144,12 +146,12 @@ const PricingPage = () => {
 
               <div className="grid grid-cols-2 gap-4 py-3 bg-backgroundClr/25 rounded-2xl border border-secondaryClr/5 mb-4 text-center">
                 <div>
-                  <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">Base Price</span>
-                  <p className="text-base font-black text-primaryClr mt-0.5">{p.basePrice} Birr</p>
+                  <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">{t('pricing.basePrice').split(' ')[0]} {t('pricing.basePrice').split(' ')[1]}</span>
+                  <p className="text-base font-black text-primaryClr mt-0.5">{p.basePrice} {t('common.birr')}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">Est. Days</span>
-                  <p className="text-base font-black text-secondaryClr mt-0.5">{p.estimatedDays} Days</p>
+                  <span className="text-[10px] uppercase font-black tracking-wider text-secondaryClr/40">{t('pricing.estimatedDays')}</span>
+                  <p className="text-base font-black text-secondaryClr mt-0.5">{p.estimatedDays} {t('common.days')}</p>
                 </div>
               </div>
 
@@ -157,7 +159,7 @@ const PricingPage = () => {
               <div className="mb-4">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Ruler size={12} className="text-primaryClr/50" />
-                  <span className="text-[10px] font-black uppercase tracking-wider text-secondaryClr/40">Required Measurements</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-secondaryClr/40">{t('pricing.requiredMeasurements')}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {(p.requiredMeasurements || ALL_MEASUREMENTS).map(m => (
@@ -174,7 +176,7 @@ const PricingPage = () => {
                 onClick={() => handleEditClick(p)}
                 className="w-full py-2 border border-primaryClr/15 hover:bg-primaryClr/5 text-primaryClr rounded-xl text-xs font-bold transition-all"
               >
-                Modify Structure
+                {t('common.edit')}
               </button>
             </div>
           </div>
@@ -185,11 +187,11 @@ const PricingPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={selectedPricing ? `Modify Pricing Structure: ${selectedPricing.itemType}` : 'Add New Garment Service'}
+        title={selectedPricing ? t('common.edit') + ' - ' + selectedPricing.itemType : t('pricing.addItem')}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Garment/Item Type"
+            label={t('pricing.itemType')}
             placeholder="e.g. Suit, Blazer, Shirt"
             required
             disabled={!!selectedPricing}
@@ -197,7 +199,7 @@ const PricingPage = () => {
             onChange={(e) => setItemType(e.target.value)}
           />
           <Input
-            label="Base Price (Birr)"
+            label={t('pricing.basePrice')}
             type="number"
             min="0"
             required
@@ -205,7 +207,7 @@ const PricingPage = () => {
             onChange={(e) => setBasePrice(e.target.value)}
           />
           <Input
-            label="Estimated Days for Crafting"
+            label={t('pricing.estimatedDays')}
             type="number"
             min="1"
             required
@@ -257,13 +259,13 @@ const PricingPage = () => {
               onClick={() => setIsModalOpen(false)}
               className="w-1/2"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               className="w-1/2"
             >
-              {selectedPricing ? 'Update Pricing' : 'Add Garment'}
+              {t('common.save')}
             </Button>
           </div>
         </form>

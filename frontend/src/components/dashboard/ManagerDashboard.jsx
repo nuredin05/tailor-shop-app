@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTranslation } from 'react-i18next';
 import Card from '../ui/Card';
 import { Button } from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -33,6 +34,7 @@ const ManagerDashboard = ({ user }) => {
   const [assigningOrder, setAssigningOrder] = useState(null);
   const [assignEmployeeId, setAssignEmployeeId] = useState('');
   const [assignLoading, setAssignLoading] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchDashboardData();
@@ -156,8 +158,8 @@ const ManagerDashboard = ({ user }) => {
             <UserCheck size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-primaryClr">Manager Portal: Welcome, {user?.name}!</h1>
-            <p className="text-sm text-primaryClr/60">Overviewing tailoring workshops, active tasks, employees, and profits.</p>
+            <h1 className="text-xl font-bold text-primaryClr">{t('manager.title')}: {user?.name}!</h1>
+            <p className="text-sm text-primaryClr/60">{t('manager.subtitle')}</p>
           </div>
         </div>
         <button 
@@ -165,38 +167,34 @@ const ManagerDashboard = ({ user }) => {
           className="flex items-center justify-center gap-2 self-start md:self-auto px-4 py-2 border border-primaryClr/15 text-primaryClr hover:bg-primaryClr/5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Refresh Stats
+          {t('manager.refreshStats')}
         </button>
       </div>
 
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card 
-          title="Revenue (Paid)" 
+          title={t('manager.revenue')} 
           value={formatCurrency(performance.totalRevenue)} 
           trend={TrendingUp} 
           trendColor="text-green-600"
-          changes="Total cash in"
         />
         <Card 
-          title="Expenses & Payroll" 
+          title={t('manager.expensesPayroll')} 
           value={formatCurrency(performance.totalExpenses)} 
           trend={TrendingDown} 
           trendColor="text-red-500"
-          changes="Operational outflow"
         />
         <Card 
-          title="Net Profit" 
+          title={t('manager.netProfit')} 
           value={formatCurrency(performance.profit)} 
           trend={performance.profit >= 0 ? TrendingUp : TrendingDown} 
           trendColor={performance.profit >= 0 ? "text-green-600" : "text-red-500"}
-          changes="Margin after expenses"
         />
         <Card 
-          title="Completion Rate" 
+          title={t('manager.completionRate')} 
           value={`${performance.totalOrders > 0 ? Math.round((performance.completedOrders / performance.totalOrders) * 100) : 0}%`} 
           trend={Percent} 
-          changes={`${performance.completedOrders} of ${performance.totalOrders} orders`}
         />
       </div>
 
@@ -206,30 +204,30 @@ const ManagerDashboard = ({ user }) => {
           <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
             <AlertTriangle size={20} />
           </div>
-          Active Production Bottlenecks
+          {t('manager.bottlenecks')}
           {bottlenecks.length > 0 && (
             <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">
-              {bottlenecks.length} Overdue
+              {bottlenecks.length} {t('manager.daysOverdue').split(' ')[1]}
             </span>
           )}
         </h3>
 
         {bottlenecks.length === 0 ? (
           <div className="py-12 text-center text-secondaryClr/40 italic text-sm bg-backgroundClr/10 rounded-2xl border border-dashed border-secondaryClr/10">
-            No active bottlenecks detected. All orders are on schedule!
+            {t('manager.noBottlenecks')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
-                  <th className="px-6 py-4">Order</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Current Stage</th>
-                  <th className="px-6 py-4">Due Date</th>
-                  <th className="px-6 py-4">Assigned Tailor</th>
-                  <th className="px-6 py-4">Days Overdue</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4">{t('orders.orderNumber')}</th>
+                  <th className="px-6 py-4">{t('orders.customer')}</th>
+                  <th className="px-6 py-4">{t('orders.status')}</th>
+                  <th className="px-6 py-4">{t('orders.dueDate')}</th>
+                  <th className="px-6 py-4">{t('orders.assignedTo')}</th>
+                  <th className="px-6 py-4">{t('manager.daysOverdue')}</th>
+                  <th className="px-6 py-4 text-right">{t('orders.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondaryClr/5">
@@ -253,14 +251,14 @@ const ManagerDashboard = ({ user }) => {
                       {order.assignedTo}
                     </td>
                     <td className="px-6 py-4 font-black text-red-600 text-sm">
-                      {order.daysOverdue} days
+                      {order.daysOverdue} {t('common.days')}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleOpenReassignModal(order)}
                         className="px-3 py-1.5 bg-primaryClr/10 hover:bg-primaryClr text-primaryClr hover:text-white rounded-lg text-xs font-bold transition-all"
                       >
-                        Reassign Task
+                        {t('manager.reassignTask')}
                       </button>
                     </td>
                   </tr>
@@ -279,7 +277,7 @@ const ManagerDashboard = ({ user }) => {
             <div className="p-2 bg-primaryClr/10 rounded-lg text-primaryClr">
               <Users size={20} />
             </div>
-            Employee Production Rates
+            {t('manager.employeeRates')}
           </h3>
           
           <div className="space-y-6">
@@ -324,20 +322,20 @@ const ManagerDashboard = ({ user }) => {
           <div>
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
               <Receipt size={20} className="text-white/80" />
-              Financial Breakdown
+              {t('manager.financialBreakdown')}
             </h3>
             
             <div className="space-y-4">
               <div className="flex justify-between border-b border-white/10 pb-2">
-                <span className="text-sm text-white/60">Gross Revenue</span>
+                <span className="text-sm text-white/60">{t('manager.grossRevenue')}</span>
                 <span className="font-bold text-sm text-green-400">{formatCurrency(financials.totalRevenue)}</span>
               </div>
               <div className="flex justify-between border-b border-white/10 pb-2">
-                <span className="text-sm text-white/60">Operating Expenses</span>
+                <span className="text-sm text-white/60">{t('manager.operatingExpenses')}</span>
                 <span className="font-bold text-sm text-red-400">({formatCurrency(financials.totalExpenses)})</span>
               </div>
               <div className="flex justify-between pb-2">
-                <span className="text-sm font-semibold">Net Operating Income</span>
+                <span className="text-sm font-semibold">{t('manager.netIncome')}</span>
                 <span className="font-black text-sm text-white">{formatCurrency(financials.profit)}</span>
               </div>
             </div>
@@ -364,7 +362,7 @@ const ManagerDashboard = ({ user }) => {
           </div>
 
           <div className="mt-8 p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Net Profit Margin</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">{t('manager.profitMargin')}</p>
             <p className="text-xl font-black text-green-400 mt-1">
               {financials.totalRevenue > 0 
                 ? `${((financials.profit / financials.totalRevenue) * 100).toFixed(1)}%` 
@@ -381,7 +379,7 @@ const ManagerDashboard = ({ user }) => {
           <div className="p-2 bg-primaryClr/10 rounded-lg text-primaryClr">
             <UserCheck size={20} />
           </div>
-          Assign Tailors to Active Orders
+          {t('manager.assignTailors')}
         </h3>
 
         {allOrders.length === 0 ? (
@@ -393,12 +391,12 @@ const ManagerDashboard = ({ user }) => {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
-                  <th className="px-6 py-4">Order #</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Stage</th>
-                  <th className="px-6 py-4">Assigned Tailor</th>
-                  <th className="px-6 py-4">Due Date</th>
-                  <th className="px-6 py-4 text-right">Action</th>
+                  <th className="px-6 py-4">{t('orders.orderNumber')}</th>
+                  <th className="px-6 py-4">{t('orders.customer')}</th>
+                  <th className="px-6 py-4">{t('orders.status')}</th>
+                  <th className="px-6 py-4">{t('orders.assignedTo')}</th>
+                  <th className="px-6 py-4">{t('orders.dueDate')}</th>
+                  <th className="px-6 py-4 text-right">{t('orders.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondaryClr/5">
@@ -423,10 +421,10 @@ const ManagerDashboard = ({ user }) => {
                         <span className="flex items-center gap-1.5 text-sm font-semibold text-primaryClr">
                           <div className="w-2 h-2 rounded-full bg-green-500" />
                           {order.assignedTo.name}
-                          <span className="text-[10px] text-secondaryClr/50 font-normal">({order.assignedTo.role})</span>
+                          <span className="text-[10px] text-secondaryClr/50 font-normal">({t(`users.roles.${order.assignedTo.role}`) || order.assignedTo.role})</span>
                         </span>
                       ) : (
-                        <span className="text-xs text-secondaryClr/40 italic">Unassigned</span>
+                        <span className="text-xs text-secondaryClr/40 italic">{t('manager.unassigned')}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-xs font-semibold text-secondaryClr/70">
@@ -437,7 +435,7 @@ const ManagerDashboard = ({ user }) => {
                         onClick={() => openAssignModal(order)}
                         className="px-3 py-1.5 bg-primaryClr/10 hover:bg-primaryClr text-primaryClr hover:text-white rounded-lg text-xs font-bold transition-all"
                       >
-                        {order.assignedTo ? 'Reassign' : 'Assign Tailor'}
+                        {order.assignedTo ? t('orders.reassign') : t('orders.assignTailor')}
                       </button>
                     </td>
                   </tr>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import { toast } from 'react-hot-toast';
 import Card from '../components/ui/Card';
@@ -21,6 +22,7 @@ import {
 
 const CustomersPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,7 +130,7 @@ const CustomersPage = () => {
       {/* Header card */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-primaryClr">Customer Profiles</h1>
+          <h1 className="text-2xl font-display font-bold text-primaryClr">{t('customers.title')}</h1>
           <p className="text-secondaryClr/60 text-sm">Create and browse tailoring clients and manage measurements records.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -137,13 +139,13 @@ const CustomersPage = () => {
             className="flex items-center gap-2 px-4 py-2.5 bg-primaryClr text-white rounded-xl transition-all font-bold text-sm shadow-lg shadow-primaryClr/20 hover:scale-105 active:scale-95 animate-fadeIn"
           >
             <UserPlus size={18} />
-            Add Customer
+            {t('customers.addClient')}
           </button>
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondaryClr/40" size={18} />
             <input
               type="text"
-              placeholder="Search by name, phone..."
+              placeholder={t('customers.searchPlaceholder')}
               className="input-field pl-10 py-2.5 w-full md:w-80 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -196,15 +198,15 @@ const CustomersPage = () => {
                 className="flex-1 py-2.5 bg-primaryClr/5 hover:bg-primaryClr hover:text-white text-primaryClr rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
               >
                 <Maximize2 size={12} />
-                Measurements Detail
+                {t('customers.viewMeasurements')}
               </button>
               {user?.role === 'manager' && (
                 <button
                   onClick={() => confirmDeleteCustomer(customer._id)}
                   className="px-4 py-2.5 bg-red-50 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center"
-                  title="Delete Customer"
+                  title={t('common.delete')}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               )}
             </div>
@@ -212,7 +214,7 @@ const CustomersPage = () => {
         ))}
         {filteredCustomers.length === 0 && (
           <div className="col-span-full py-16 text-center text-secondaryClr/40 italic text-sm bg-white rounded-[2rem] border border-secondaryClr/5">
-            No customers match the query.
+            {t('customers.noCustomers')}
           </div>
         )}
       </div>
@@ -265,7 +267,7 @@ const CustomersPage = () => {
             </div>
 
             <div className="pt-4 text-right">
-              <Button onClick={() => setSelectedCustomer(null)}>Close Spec</Button>
+              <Button onClick={() => setSelectedCustomer(null)}>{t('common.close')}</Button>
             </div>
           </div>
         </Modal>
@@ -275,33 +277,33 @@ const CustomersPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Add New Customer Profile"
+        title={t('customers.createClient')}
       >
         <form onSubmit={handleCreateCustomer} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Full Name"
+              label={t('customers.name')}
               placeholder="Abebe Balcha"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
             <Input
-              label="Phone Number"
+              label={t('customers.phone')}
               placeholder="0911223344"
               required
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
             <Input
-              label="Email Address"
+              label={t('customers.email')}
               type="email"
               placeholder="abebe@example.com"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
             <Input
-              label="Address"
+              label={t('customers.address')}
               placeholder="Bole, Addis Ababa"
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -310,9 +312,9 @@ const CustomersPage = () => {
 
           <div className="border-t border-secondaryClr/10 pt-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/50">Custom Measurements Specs (cm)</h4>
+              <h4 className="text-xs font-black uppercase tracking-widest text-primaryClr/50">{t('customers.measurements')}</h4>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-secondaryClr/40 uppercase tracking-widest">Garment Type:</span>
+                <span className="text-[10px] font-black text-secondaryClr/40 uppercase tracking-widest">{t('customers.garmentType')}:</span>
                 <select
                   value={selectedGarmentType}
                   onChange={(e) => setSelectedGarmentType(e.target.value)}
@@ -383,13 +385,13 @@ const CustomersPage = () => {
               onClick={() => setIsModalOpen(false)}
               className="w-1/2"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               className="w-1/2"
             >
-              Save Customer
+              {t('common.save')}
             </Button>
           </div>
         </form>
@@ -399,7 +401,7 @@ const CustomersPage = () => {
       <Modal
         isOpen={!!customerToDelete}
         onClose={() => setCustomerToDelete(null)}
-        title="Confirm Deletion"
+        title={t('common.warning')}
       >
         <div className="space-y-4">
           <p className="text-sm text-secondaryClr/70 font-semibold">
@@ -412,14 +414,14 @@ const CustomersPage = () => {
               onClick={() => setCustomerToDelete(null)}
               className="w-1/2"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
               onClick={handleDeleteCustomer}
               className="w-1/2 bg-red-600 hover:bg-red-700 border-red-600 text-white shadow-lg shadow-red-600/20"
             >
-              Delete Profile
+              {t('common.delete')}
             </Button>
           </div>
         </div>

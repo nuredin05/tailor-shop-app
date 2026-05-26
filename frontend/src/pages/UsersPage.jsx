@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import { 
   Users, 
@@ -24,6 +25,7 @@ import Card from '../components/ui/Card';
 
 const UsersPage = () => {
   const { user: currentUser } = useAuth();
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -213,55 +215,56 @@ const UsersPage = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeInUp">
         <Card 
-          title="Total Users" 
+          title={t('users.totalUsers')} 
           value={users.length} 
           trend={Users} 
-          changes={`${users.length > 0 ? '+100%' : '0%'}`}
+          trendColor="text-blue-500"
+          className="border-blue-100 bg-blue-50/10"
         />
         <Card 
-          title="Staff Members" 
-          value={users.filter(u => ['admin', 'manager', 'officer', 'cutter', 'tailor'].includes(u.role)).length} 
+          title={t('users.staffMembers')} 
+          value={users.filter(u => ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor'].includes(u.role)).length} 
           trend={Shield} 
-          trendColor="text-blue-600"
-          changes="Active"
+          trendColor="text-purple-500"
+          className="border-purple-100 bg-purple-50/10"
         />
         <Card 
-          title="Customers" 
+          title={t('users.customerCount')} 
           value={users.filter(u => u.role === 'customer').length} 
           trend={UserCheck} 
-          trendColor="text-green-600"
-          changes="System"
+          trendColor="text-green-500"
+          className="border-green-100 bg-green-50/10"
         />
       </div>
 
       {/* Header & Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-primaryClr">User Management</h1>
-          <p className="text-secondaryClr/60 text-sm">Manage user accounts, roles, and permissions.</p>
+          <h1 className="text-2xl font-display font-bold text-primaryClr">{t('users.title')}</h1>
+          <p className="text-secondaryClr/60 text-sm">{t('users.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primaryClr text-white rounded-xl transition-all font-bold text-sm shadow-lg shadow-primaryClr/20 hover:scale-105 active:scale-95"
-          >
-            <UserPlus size={18} />
-            <span className="hidden sm:inline">Add User</span>
-          </button>
           <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-secondaryClr/10 text-secondaryClr hover:text-primaryClr hover:border-primaryClr/20 rounded-xl transition-all font-bold text-sm shadow-sm"
           >
             <Download size={18} />
-            <span className="hidden sm:inline">Export CSV</span>
+            <span className="hidden sm:inline">{t('users.exportCsv')}</span>
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primaryClr text-white rounded-xl transition-all font-bold text-sm shadow-lg shadow-primaryClr/20 hover:scale-105 active:scale-95"
+          >
+            <UserPlus size={18} />
+            <span className="hidden sm:inline">{t('users.addUser')}</span>
           </button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-secondaryClr/40" size={18} />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={t('common.search')}
               className="input-field pl-10 w-full md:w-80"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -286,18 +289,18 @@ const UsersPage = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-secondaryClr/5 text-secondaryClr uppercase tracking-widest text-[10px] font-bold">
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Joined</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t('users.fullName')}</th>
+                <th className="px-6 py-4">{t('users.role')}</th>
+                <th className="px-6 py-4">{t('users.status')}</th>
+                <th className="px-6 py-4">{t('users.joinedDate')}</th>
+                <th className="px-6 py-4 text-right">{t('users.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondaryClr/5">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-secondaryClr/40 italic text-sm">
-                    No users found matching your search.
+                  <td colSpan="5" className="px-6 py-12 text-center text-secondaryClr/40 italic text-sm">
+                    {t('users.noUsers')}
                   </td>
                 </tr>
               ) : (
@@ -319,32 +322,28 @@ const UsersPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <select
-                        value={u.role}
-                        disabled={u._id === currentUser._id || (u.role === 'admin' && currentUser.role !== 'admin')}
-                        onChange={(e) => handleRoleChange(u._id, e.target.value)}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-full border-0 focus:ring-2 focus:ring-primaryClr/20 cursor-pointer appearance-none ${
-                          u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                          u.role === 'manager' ? 'bg-blue-100 text-blue-700' :
-                          ['cutter', 'tailor'].includes(u.role) ? 'bg-amber-100 text-amber-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        <option value="customer">Customer</option>
-                        <option value="cutter">Cutter</option>
-                        <option value="tailor">Tailor</option>
-                        <option value="officer">Officer</option>
-                        <option value="manager">Manager</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                        u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
+                        u.role === 'admin' ? 'bg-red-100 text-red-700' :
+                        u.role === 'manager' ? 'bg-blue-100 text-blue-700' :
+                        u.role === 'officer' ? 'bg-indigo-100 text-indigo-700' :
+                        u.role === 'cutter' ? 'bg-amber-100 text-amber-700' :
+                        u.role === 'tailor' ? 'bg-orange-100 text-orange-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        {t(`users.roles.${u.role}`) || u.role}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider ${
-                        u.status === 'active' ? 'text-green-600' : 'text-red-500'
-                      }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${u.status === 'active' ? 'bg-green-600 animate-pulse' : 'bg-red-500'}`} />
-                        {u.status}
-                      </div>
+                      {u.isSuspended ? (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+                          <XCircle size={14} /> Suspended
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-green-600">
+                          <CheckCircle2 size={14} /> Active
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-xs text-secondaryClr/60">
                       {new Date(u.createdAt).toLocaleDateString()}
@@ -352,32 +351,33 @@ const UsersPage = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1">
                         <button
-                          onClick={() => handleStatusToggle(u._id, u.status)}
-                          disabled={u._id === currentUser._id || u.role === 'superadmin'}
-                          className={`p-2 rounded-lg transition-all ${
-                            u.status === 'active' 
-                              ? 'text-secondaryClr/40 hover:text-amber-600 hover:bg-amber-50' 
-                              : 'text-secondaryClr/40 hover:text-green-600 hover:bg-green-50'
-                          } disabled:opacity-10`}
-                          title={u.status === 'active' ? 'Deactivate Account' : 'Activate Account'}
-                        >
-                          <Power size={16} />
-                        </button>
-                        <button
                           onClick={() => openEditModal(u)}
                           className="p-2 text-secondaryClr/40 hover:text-primaryClr hover:bg-primaryClr/5 rounded-lg transition-all"
-                          title="Edit User"
+                          title={t('common.edit')}
                         >
                           <Edit size={16} />
                         </button>
-                        <button
-                          onClick={() => openDeleteModal(u)}
-                          disabled={u._id === currentUser._id || (u.role === 'superadmin' && currentUser.role !== 'superadmin')}
-                          className="p-2 text-secondaryClr/40 hover:text-status-cancelled hover:bg-red-50 rounded-lg transition-all disabled:opacity-30"
-                          title="Delete User"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {u._id !== currentUser.id && (
+                          <button
+                            onClick={() => handleToggleSuspend(u)}
+                            className={`p-2 rounded-lg transition-all ${u.isSuspended ? 'text-green-600 hover:bg-green-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                            title={u.isSuspended ? t('users.activate') : t('users.deactivate')}
+                          >
+                            <Power size={16} />
+                          </button>
+                        )}
+                        {u._id !== currentUser.id && u.role !== 'superadmin' && (
+                          <button
+                            onClick={() => {
+                              setUserToDelete(u);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className="p-2 text-secondaryClr/40 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title={t('common.delete')}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -391,19 +391,22 @@ const UsersPage = () => {
       {/* Add User Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add New User"
+        onClose={() => {
+          setIsModalOpen(false);
+          setStatusMsg(null);
+        }}
+        title={t('users.createUser')}
       >
         <form onSubmit={handleCreateUser} className="space-y-4">
           <Input
-            label="Full Name"
+            label={t('users.fullName')}
             placeholder="John Doe"
             required
             value={newUser.name}
             onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
           />
           <Input
-            label="Email Address"
+            label={t('users.email')}
             type="email"
             placeholder="john@example.com"
             required
@@ -411,13 +414,13 @@ const UsersPage = () => {
             onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
           />
           <Input
-            label="Phone Number"
+            label={t('users.phone')}
             placeholder="+1 (555) 000-0000"
             value={newUser.phone}
             onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
           />
           <Input
-            label="Password"
+            label={t('users.password')}
             type="password"
             placeholder="Min 6 characters"
             required
@@ -425,18 +428,18 @@ const UsersPage = () => {
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
           />
           <div>
-            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">Role</label>
+            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">{t('users.role')}</label>
             <select
               value={newUser.role}
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="w-full bg-primaryClr/5 border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
             >
-              <option value="customer">Customer</option>
-              <option value="cutter">Cutter</option>
-              <option value="tailor">Tailor</option>
-              <option value="officer">Officer</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
+              <option value="customer">{t('users.roles.customer')}</option>
+              <option value="cutter">{t('users.roles.cutter')}</option>
+              <option value="tailor">{t('users.roles.tailor')}</option>
+              <option value="officer">{t('users.roles.officer')}</option>
+              <option value="manager">{t('users.roles.manager')}</option>
+              <option value="admin">{t('users.roles.admin')}</option>
             </select>
           </div>
           <div className="pt-4">
@@ -445,7 +448,7 @@ const UsersPage = () => {
               className="w-full"
               disabled={isCreating}
             >
-              {isCreating ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Create User'}
+              {isCreating ? <Loader2 className="animate-spin mx-auto" size={20} /> : t('users.createUser')}
             </Button>
           </div>
         </form>
@@ -454,19 +457,22 @@ const UsersPage = () => {
       {/* Edit User Modal */}
       <Modal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit User Details"
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setStatusMsg(null);
+        }}
+        title={t('users.updateUser')}
       >
         <form onSubmit={handleUpdateUser} className="space-y-4">
           <Input
-            label="Full Name"
+            label={t('users.fullName')}
             placeholder="John Doe"
             required
             value={editUser.name}
             onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
           />
           <Input
-            label="Email Address"
+            label={t('users.email')}
             type="email"
             placeholder="john@example.com"
             required
@@ -474,24 +480,24 @@ const UsersPage = () => {
             onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
           />
           <Input
-            label="Phone Number"
+            label={t('users.phone')}
             placeholder="+1 (555) 000-0000"
             value={editUser.phone}
             onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
           />
           <div>
-            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">Role</label>
+            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">{t('users.role')}</label>
             <select
               value={editUser.role}
               onChange={(e) => setEditUser({ ...editUser, role: e.target.value })}
               className="w-full bg-primaryClr/5 border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20"
             >
-              <option value="customer">Customer</option>
-              <option value="cutter">Cutter</option>
-              <option value="tailor">Tailor</option>
-              <option value="officer">Officer</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
+              <option value="customer">{t('users.roles.customer')}</option>
+              <option value="cutter">{t('users.roles.cutter')}</option>
+              <option value="tailor">{t('users.roles.tailor')}</option>
+              <option value="officer">{t('users.roles.officer')}</option>
+              <option value="manager">{t('users.roles.manager')}</option>
+              <option value="admin">{t('users.roles.admin')}</option>
             </select>
           </div>
           <div className="pt-4">
@@ -500,7 +506,7 @@ const UsersPage = () => {
               className="w-full"
               disabled={isUpdating}
             >
-              {isUpdating ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Update User'}
+              {isUpdating ? <Loader2 className="animate-spin mx-auto" size={20} /> : t('users.updateUser')}
             </Button>
           </div>
         </form>
@@ -510,7 +516,7 @@ const UsersPage = () => {
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        title="Confirm Deletion"
+        title={t('common.confirmDelete')}
         footer={
           <div className="flex gap-3">
             <Button
@@ -518,14 +524,14 @@ const UsersPage = () => {
               onClick={() => setIsDeleteModalOpen(false)}
               disabled={isDeleting}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700 text-white"
               onClick={handleDeleteUser}
               disabled={isDeleting}
             >
-              {isDeleting ? <Loader2 className="animate-spin" size={18} /> : 'Delete User'}
+              {isDeleting ? <Loader2 className="animate-spin" size={18} /> : t('common.delete')}
             </Button>
           </div>
         }
