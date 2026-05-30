@@ -38,7 +38,7 @@ const CustomersPage = () => {
     chest: 0, waist: 0, hips: 0, shoulder: 0, sleeves: 0, inseam: 0, neck: 0, length: 0,
     fullLengthBack: 0, fullLengthFront: 0, acrossChest: 0, acrossShoulder: 0, shoulderLength: 0, centerLength: 0, shoulderSlope: 0, acrossBack: 0, backNeck: 0,
     pantLength: 0, crotchDepth: 0, hipDepth: 0, waistArcFront: 0, waistArcBack: 0, hipArcFront: 0, hipArcBack: 0,
-    bicep: 0, capHeight: 0
+    bicep: 0, capHeight: 0, sampleImage: ''
   };
 
   const [form, setForm] = useState({
@@ -77,7 +77,7 @@ const CustomersPage = () => {
           shoulderSlope: Number(form.shoulderSlope), acrossBack: Number(form.acrossBack), backNeck: Number(form.backNeck),
           pantLength: Number(form.pantLength), crotchDepth: Number(form.crotchDepth), hipDepth: Number(form.hipDepth),
           waistArcFront: Number(form.waistArcFront), waistArcBack: Number(form.waistArcBack), hipArcFront: Number(form.hipArcFront), hipArcBack: Number(form.hipArcBack),
-          bicep: Number(form.bicep), capHeight: Number(form.capHeight)
+          bicep: Number(form.bicep), capHeight: Number(form.capHeight), sampleImage: form.sampleImage
         }
       };
 
@@ -239,7 +239,8 @@ const CustomersPage = () => {
                 { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
                 { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
                 { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
-                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] },
+                { title: "Images", keys: ['sampleImage'] }
               ].map(group => {
                 const groupMeasurements = group.keys.reduce((acc, k) => {
                   if (selectedCustomer.measurements?.[k] !== undefined) acc[k] = selectedCustomer.measurements[k];
@@ -253,11 +254,15 @@ const CustomersPage = () => {
                     <h5 className="text-[10px] font-black uppercase tracking-widest text-secondaryClr/40 mb-2">{group.title}</h5>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {Object.entries(groupMeasurements).map(([key, val]) => (
-                        <div key={key} className="bg-primaryClr/5 border border-primaryClr/10 p-3 rounded-2xl text-center">
+                        <div key={key} className={`bg-primaryClr/5 border border-primaryClr/10 p-3 rounded-2xl text-center ${key === 'sampleImage' ? 'col-span-full' : ''}`}>
                           <span className="text-[9px] uppercase font-black tracking-wider text-secondaryClr/40 truncate block w-full" title={key.replace(/([A-Z])/g, ' $1').trim()}>
                             {key.replace(/([A-Z])/g, ' $1').trim()}
                           </span>
-                          <p className="text-lg font-black text-primaryClr mt-0.5">{val} cm</p>
+                          {key === 'sampleImage' ? (
+                            val ? <a href={val} target="_blank" rel="noopener noreferrer" className="text-primaryClr underline text-xs font-bold mt-1 block">View Image</a> : <p className="text-xs font-bold text-secondaryClr/40 mt-1">None</p>
+                          ) : (
+                            <p className="text-lg font-black text-primaryClr mt-0.5">{val} cm</p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -335,10 +340,11 @@ const CustomersPage = () => {
                 { title: "General", keys: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'inseam', 'neck', 'length'] },
                 { title: "Shirt Foundation", keys: ['fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'] },
                 { title: "Trouser Foundation", keys: ['pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack'] },
-                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] }
+                { title: "Coat & Sleeve Specific", keys: ['bicep', 'capHeight'] },
+                { title: "Images", keys: ['sampleImage'] }
               ].map(group => {
                 const visibleKeys = group.keys.filter(key => {
-                  if (selectedGarmentType === 'All') return true;
+                  if (selectedGarmentType === 'All' || key === 'sampleImage') return true;
                   const mapping = {
                     Suit: ['chest', 'waist', 'hips', 'shoulder', 'sleeves', 'neck', 'length', 'pantLength', 'crotchDepth', 'hipDepth', 'waistArcFront', 'waistArcBack', 'hipArcFront', 'hipArcBack', 'bicep', 'capHeight'],
                     Shirt: ['chest', 'shoulder', 'sleeves', 'neck', 'length', 'fullLengthBack', 'fullLengthFront', 'acrossChest', 'acrossShoulder', 'shoulderLength', 'centerLength', 'shoulderSlope', 'acrossBack', 'backNeck'],
@@ -356,19 +362,56 @@ const CustomersPage = () => {
                     <h5 className="text-[10px] font-black uppercase tracking-widest text-primaryClr/70 mb-3">{group.title}</h5>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {visibleKeys.map(key => (
-                        <div key={key}>
+                        <div key={key} className={key === 'sampleImage' ? 'col-span-full' : ''}>
                           <label className="block text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider mb-1 truncate" title={key.replace(/([A-Z])/g, ' $1').trim()}>
                             {key.replace(/([A-Z])/g, ' $1').trim()}
                           </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            placeholder="0.0"
-                            className="w-full bg-white border border-secondaryClr/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20 transition-all"
-                            value={form[key] || ''}
-                            onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                          />
+                          {key === 'sampleImage' ? (
+                            <div className="flex items-center gap-4">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                id={`customerImageUpload-${group.title}`}
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => setForm({ ...form, [key]: reader.result });
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                              <label 
+                                htmlFor={`customerImageUpload-${group.title}`}
+                                className="cursor-pointer bg-primaryClr/5 hover:bg-primaryClr/10 text-primaryClr text-xs font-bold px-4 py-3 rounded-xl border border-primaryClr/20 transition-colors whitespace-nowrap"
+                              >
+                                Upload Image
+                              </label>
+                              {form[key] && (
+                                <div className="relative group">
+                                  <img src={form[key]} alt="Preview" className="h-12 w-12 object-cover rounded-xl border border-primaryClr/20 shadow-sm" />
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setForm({ ...form, [key]: '' })}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              placeholder="0.0"
+                              className="w-full bg-white border border-secondaryClr/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primaryClr/20 transition-all"
+                              value={form[key] || ''}
+                              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>

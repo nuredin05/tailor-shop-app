@@ -2,6 +2,7 @@ const Order = require('../models/Order')
 const Customer = require('../models/Customer')
 const User = require('../models/User')
 const Expense = require('../models/Expense')
+const { notifyManagers } = require('../utils/notifyManagers')
 
 // @desc    Get all orders with optional filter and search
 // @route   GET /api/orders
@@ -76,7 +77,7 @@ const getOrderById = async (req, res) => {
 // @route   POST /api/orders
 // @access  Protected (Officer / Manager)
 const createOrder = async (req, res) => {
-  const { customerId, items, dueDate, notes, initialPaymentAmount, paymentMethod } = req.body
+  const { customerId, items, dueDate, notes, initialPaymentAmount, paymentMethod, sampleImage } = req.body
 
   try {
     if (!customerId || !items || items.length === 0 || !dueDate) {
@@ -108,7 +109,6 @@ const createOrder = async (req, res) => {
 
     if (initialPaymentAmount && Number(initialPaymentAmount) > 0) {
       const amt = Number(initialPaymentAmount)
-      amountPaid = amt
       
       const receiptNumber = `REC-${100000 + Math.floor(Math.random() * 900000)}`
       payments.push({
@@ -117,6 +117,8 @@ const createOrder = async (req, res) => {
         receiptNumber,
         date: new Date()
       })
+
+      amountPaid = amt
 
       if (amountPaid >= totalAmount) {
         paymentStatus = 'fully_paid'
@@ -135,10 +137,18 @@ const createOrder = async (req, res) => {
       dueDate,
       payments,
       notes,
+      sampleImage,
       status: 'pending'
     })
 
     const populated = await Order.findById(order._id).populate('customer')
+
+    // Notify all managers/admins of the new order
+    await notifyManagers(
+      '🧵 New Order Placed',
+      `Order ${orderNumber} was created for ${populated.customer?.name || 'Unknown customer'} — Total: ${totalAmount.toLocaleString()} Birr, Due: ${new Date(dueDate).toLocaleDateString()}`
+    )
+
     res.status(201).json(populated)
   } catch (error) {
     res.status(500).json({ message: error.message })

@@ -20,8 +20,10 @@ import {
   Award,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
+
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -93,6 +95,17 @@ const Layout = ({ children }) => {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await Promise.all(
+        notifications.filter(n => !n.is_read).map(n => api.put(`/notifications/${n._id}/read`))
+      );
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     setTimeout(() => {
@@ -116,6 +129,7 @@ const Layout = ({ children }) => {
     { name: t('nav.pricing'), icon: ClipboardList, path: '/pricing', roles: ['admin', 'superadmin', 'manager'] },
     { name: t('nav.users'), icon: Users, path: '/users', roles: ['admin', 'superadmin', 'manager'] },
     { name: t('nav.expenses'), icon: BarChart3, path: '/expenses', roles: ['admin', 'superadmin', 'manager'] },
+    { name: 'Reports', icon: FileText, path: '/reports', roles: ['admin', 'superadmin', 'manager'] },
     { name: t('nav.settings'), icon: Settings, path: '/settings', roles: ['admin', 'superadmin', 'manager', 'officer', 'cutter', 'tailor', 'customer'] }
   ];
 
@@ -136,10 +150,14 @@ const Layout = ({ children }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-60'} w-60 bg-primaryClr/40 border-r border-primaryClr/5 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 bg-primaryClr/40 border-r border-primaryClr/5 flex flex-col transform transition-all duration-300 ease-in-out
+          w-60 lg:static lg:translate-x-0
+          ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+          ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-60'}
+        `}
         onClick={e => e.stopPropagation()}
       >
-        <div className={`p-6 relative flex flex-col h-full ${isSidebarCollapsed ? 'items-center' : ''}`}>
+        <div className={`p-6 relative flex flex-col h-full ${isSidebarCollapsed ? 'lg:items-center' : ''}`}>
           <button
             className="absolute top-6 right-6 lg:hidden text-primaryClr hover:text-secondaryClr"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -156,18 +174,16 @@ const Layout = ({ children }) => {
           </button>
 
           <div
-            className={`flex items-center gap-3 px-2 mb-10 cursor-pointer transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'justify-center p-0' : ''}`}
+            className={`flex items-center gap-3 px-2 mb-10 cursor-pointer transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:justify-center lg:p-0' : ''}`}
             onClick={() => navigate('/dashboard')}
           >
             <div className="w-10 h-10 flex items-center justify-center shrink-0 text-primaryClr">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            {!isSidebarCollapsed && (
-              <div className="flex flex-col animate-fadeIn">
-                <span className="text-xl font-display font-bold text-primaryClr leading-tight">Admin</span>
-                <span className="text-[10px] text-secondaryClr uppercase tracking-widest font-semibold mt-0.5 opacity-60">Control Panel</span>
-              </div>
-            )}
+            <div className={`flex flex-col animate-fadeIn ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
+              <span className="text-xl font-display font-bold text-primaryClr leading-tight">Admin</span>
+              <span className="text-[10px] text-secondaryClr uppercase tracking-widest font-semibold mt-0.5 opacity-60">Control Panel</span>
+            </div>
           </div>
 
           <nav className="space-y-2 flex-1">
@@ -178,24 +194,30 @@ const Layout = ({ children }) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`sidebar-link flex items-center overflow-hidden ${isSidebarCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive ? 'sidebar-link-active' : ''} transition-all duration-300`}
+                  className={`sidebar-link flex items-center overflow-hidden
+                    gap-3 px-4 py-3
+                    ${isSidebarCollapsed ? 'lg:justify-center lg:px-3' : ''}
+                    ${isActive ? 'sidebar-link-active' : ''}
+                    transition-all duration-300`}
                   title={isSidebarCollapsed ? item.name : ''}
                 >
                   <Icon size={20} className="shrink-0" />
-                  {!isSidebarCollapsed && <span className="animate-fadeIn">{item.name}</span>}
+                  <span className={`animate-fadeIn ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>{item.name}</span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className={`mt-auto pt-6 border-t border-secondaryClr/5 ${isSidebarCollapsed ? 'w-full flex justify-center' : ''}`}>
+          <div className={`mt-auto pt-6 border-t border-secondaryClr/5 ${isSidebarCollapsed ? 'lg:w-full lg:flex lg:justify-center' : ''}`}>
             <button
               onClick={handleLogout}
-              className={`flex items-center text-primaryClr hover:text-status-cancelled rounded-xl transition-all duration-200 overflow-hidden ${isSidebarCollapsed ? 'p-3 justify-center' : 'gap-3 px-4 py-3 w-full'}`}
+              className={`flex items-center text-primaryClr hover:text-status-cancelled rounded-xl transition-all duration-200 overflow-hidden
+                gap-3 px-4 py-3 w-full
+                ${isSidebarCollapsed ? 'lg:p-3 lg:justify-center lg:w-auto' : ''}`}
               title={isSidebarCollapsed ? 'Sign Out' : ''}
             >
               <LogOut size={20} className="shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fadeIn">{t('nav.signOut')}</span>}
+              <span className={`animate-fadeIn ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>{t('nav.signOut')}</span>
             </button>
           </div>
         </div>
@@ -235,6 +257,14 @@ const Layout = ({ children }) => {
                 <div className="absolute top-full right-0 mt-4 w-80 bg-white border border-secondaryClr/5 rounded-2xl shadow-2xl overflow-hidden animate-fadeInUp">
                   <div className="p-4 border-b border-secondaryClr/5 flex items-center justify-between bg-secondaryClr/5">
                     <h4 className="font-bold text-sm">Notifications</h4>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllRead}
+                        className="text-[10px] font-bold text-primaryClr hover:underline uppercase tracking-wider"
+                      >
+                        Mark all read
+                      </button>
+                    )}
                   </div>
                   <div className="max-h-80 overflow-y-auto custom-scrollbar">
                     {notifications.length === 0 ? (
@@ -245,14 +275,17 @@ const Layout = ({ children }) => {
                     ) : (
                       notifications.map(notif => (
                         <div
-                          key={notif.id}
-                          onClick={() => handleMarkRead(notif.id)}
+                          key={notif._id || notif.id}
+                          onClick={() => handleMarkRead(notif._id || notif.id)}
                           className={`p-4 border-b border-secondaryClr/5 hover:bg-secondaryClr/5 transition-colors cursor-pointer group flex items-start gap-4 ${!notif.is_read ? 'bg-primaryClr/5' : ''}`}
                         >
                           <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${!notif.is_read ? 'bg-primaryClr' : 'bg-transparent'}`} />
                           <div className="flex-1 min-w-0">
                             <p className={`text-xs ${!notif.is_read ? 'font-bold' : 'text-secondaryClr/70'}`}>{notif.title}</p>
                             <p className="text-[10px] text-secondaryClr/50 mt-1 line-clamp-2">{notif.message}</p>
+                            <p className="text-[9px] text-secondaryClr/30 mt-1">
+                              {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : ''}
+                            </p>
                           </div>
                         </div>
                       ))

@@ -17,7 +17,8 @@ const orderSchema = new mongoose.Schema(
         itemType: { type: String, required: true },
         quantity: { type: Number, default: 1 },
         price: { type: Number, required: true },
-        notes: String
+        notes: String,
+        sampleImage: String
       }
     ],
     totalAmount: {
@@ -59,6 +60,10 @@ const orderSchema = new mongoose.Schema(
       }
     ],
     notes: {
+      type: String,
+      trim: true
+    },
+    sampleImage: {
       type: String,
       trim: true
     }

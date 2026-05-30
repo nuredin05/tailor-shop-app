@@ -221,7 +221,8 @@ const CutterDashboard = ({ user }) => {
                             setSelectedCustomer({
                               ...order.customer,
                               items: order.items,
-                              styleNotes: order.styleNotes
+                              styleNotes: order.notes,
+                              orderSampleImage: order.sampleImage
                             });
                             setActiveItemIndex(0);
                           }}
@@ -567,15 +568,62 @@ const CutterDashboard = ({ user }) => {
 
             {/* Remove the redundant Measurement Summary Table completely since the sidebar handles it cleanly now */}
             {/* Added Style Notes Back if any, displayed clearly */}
-            {selectedCustomer.styleNotes && (
+            {(selectedCustomer.styleNotes || selectedCustomer.items?.[activeItemIndex]?.notes) && (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-2">
                 <div className="flex items-center gap-2 text-amber-700 text-xs font-bold uppercase tracking-widest mb-2">
                   <Sparkles className="w-4 h-4" />
                   <span>Style Directives</span>
                 </div>
-                <p className="text-sm text-amber-900/80 font-medium">
-                  {selectedCustomer.styleNotes}
-                </p>
+                <div className="space-y-2 text-sm text-amber-900/80 font-medium">
+                  {selectedCustomer.items?.[activeItemIndex]?.notes && (
+                    <p><span className="font-bold">Item Directives:</span> {selectedCustomer.items[activeItemIndex].notes}</p>
+                  )}
+                  {selectedCustomer.styleNotes && (
+                    <p><span className="font-bold">Order Notes:</span> {selectedCustomer.styleNotes}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Added Sample Image Display */}
+            {(selectedCustomer.measurements?.sampleImage || selectedCustomer.orderSampleImage || selectedCustomer.items?.[activeItemIndex]?.sampleImage) && (
+              <div className="bg-blue-50/60 border border-blue-200/50 rounded-2xl p-4 mt-2">
+                <div className="flex items-center gap-2 text-blue-700 text-xs font-bold uppercase tracking-widest mb-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Sample Image Reference</span>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {selectedCustomer.items?.[activeItemIndex]?.sampleImage && (
+                    <a 
+                      href={selectedCustomer.items[activeItemIndex].sampleImage} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-2"
+                    >
+                      View Garment Reference
+                    </a>
+                  )}
+                  {selectedCustomer.orderSampleImage && (
+                    <a 
+                      href={selectedCustomer.orderSampleImage} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-2"
+                    >
+                      View Order Reference
+                    </a>
+                  )}
+                  {selectedCustomer.measurements?.sampleImage && (
+                    <a 
+                      href={selectedCustomer.measurements.sampleImage} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-2"
+                    >
+                      View Profile Reference
+                    </a>
+                  )}
+                </div>
               </div>
             )}
 

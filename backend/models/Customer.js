@@ -54,7 +54,10 @@ const customerSchema = new mongoose.Schema(
 
       // Coat & Sleeve Specific
       bicep: { type: Number, default: 0 },
-      capHeight: { type: Number, default: 0 }
+      capHeight: { type: Number, default: 0 },
+      
+      // Images
+      sampleImage: { type: String, default: '' }
     }
   },
   { timestamps: true }

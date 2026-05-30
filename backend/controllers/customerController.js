@@ -1,4 +1,5 @@
 const Customer = require('../models/Customer')
+const { notifyManagers } = require('../utils/notifyManagers')
 
 // @desc    Get all customers with search filtering
 // @route   GET /api/customers
@@ -64,6 +65,12 @@ const createCustomer = async (req, res) => {
       address,
       measurements: measurements || {}
     })
+
+    // Notify all managers/admins of the new customer
+    await notifyManagers(
+      '👤 New Customer Registered',
+      `${name} has been added as a new customer. Phone: ${phone}${email ? ', Email: ' + email : ''}`
+    )
 
     res.status(201).json(customer)
   } catch (error) {

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tailor Shop</string>
+    <string name="title_activity_main">Tailor Shop</string>
+    <string name="package_name">com.tailorshop.app</string>
+    <string name="custom_url_scheme">com.tailorshop.app</string>
+</resources>

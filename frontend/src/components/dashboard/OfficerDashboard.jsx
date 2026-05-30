@@ -51,9 +51,10 @@ const OfficerDashboard = ({ user, hideHeader = false }) => {
   
   // Creating order state
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [orderItems, setOrderItems] = useState([{ itemType: '', quantity: 1, price: 0, notes: '' }]);
+  const [orderItems, setOrderItems] = useState([{ itemType: '', quantity: 1, price: 0, notes: '', sampleImage: '' }]);
   const [dueDate, setDueDate] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
+  const [sampleImage, setSampleImage] = useState('');
   const [initialPayment, setInitialPayment] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
 
@@ -154,7 +155,7 @@ const OfficerDashboard = ({ user, hideHeader = false }) => {
   };
 
   const handleAddOrderItem = () => {
-    setOrderItems([...orderItems, { itemType: '', quantity: 1, price: 0, notes: '' }]);
+    setOrderItems([...orderItems, { itemType: '', quantity: 1, price: 0, notes: '', sampleImage: '' }]);
   };
 
   const handleRemoveOrderItem = (index) => {
@@ -176,10 +177,12 @@ const OfficerDashboard = ({ user, hideHeader = false }) => {
           itemType: item.itemType,
           quantity: Number(item.quantity),
           price: Number(item.price),
-          notes: item.notes
+          notes: item.notes,
+          sampleImage: item.sampleImage
         })),
         dueDate,
         notes: orderNotes,
+        sampleImage,
         initialPaymentAmount: Number(initialPayment),
         paymentMethod
       };
@@ -189,9 +192,10 @@ const OfficerDashboard = ({ user, hideHeader = false }) => {
       setIsOrderModalOpen(false);
       // Reset fields
       setSelectedCustomerId('');
-      setOrderItems([{ itemType: '', quantity: 1, price: 0, notes: '' }]);
+      setOrderItems([{ itemType: '', quantity: 1, price: 0, notes: '', sampleImage: '' }]);
       setDueDate('');
       setOrderNotes('');
+      setSampleImage('');
       setInitialPayment(0);
       setPaymentMethod('cash');
       
@@ -728,53 +732,117 @@ const OfficerDashboard = ({ user, hideHeader = false }) => {
               </button>
             </div>
 
-            <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+            <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
               {orderItems.map((item, idx) => (
-                <div key={idx} className="flex gap-2 items-center bg-backgroundClr/25 p-3 rounded-xl border border-secondaryClr/5">
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {/* Item Select */}
-                    <select
-                      value={item.itemType}
-                      onChange={(e) => handlePricingSelect(idx, e.target.value)}
-                      className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-bold"
-                      required
+                <div key={idx} className="bg-backgroundClr/25 p-4 rounded-2xl border border-secondaryClr/5 space-y-3 relative group">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-secondaryClr/40">Garment #{idx + 1}</span>
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveOrderItem(idx)}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      disabled={orderItems.length === 1}
                     >
-                      <option value="">-- Type --</option>
-                      {pricings.map(p => (
-                        <option key={p._id} value={p.itemType}>{p.itemType} ({p.basePrice} Birr)</option>
-                      ))}
-                    </select>
+                      <X size={14} />
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Item Select */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider">Type</label>
+                      <select
+                        value={item.itemType}
+                        onChange={(e) => handlePricingSelect(idx, e.target.value)}
+                        className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-bold w-full"
+                        required
+                      >
+                        <option value="">-- Type --</option>
+                        {pricings.map(p => (
+                          <option key={p._id} value={p.itemType}>{p.itemType} ({p.basePrice} Birr)</option>
+                        ))}
+                      </select>
+                    </div>
 
                     {/* Qty */}
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Qty"
-                      className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-bold"
-                      value={item.quantity}
-                      onChange={(e) => handleItemFieldChange(idx, 'quantity', e.target.value)}
-                      required
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider">Qty</label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Qty"
+                        className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-bold w-full"
+                        value={item.quantity}
+                        onChange={(e) => handleItemFieldChange(idx, 'quantity', e.target.value)}
+                        required
+                      />
+                    </div>
 
                     {/* Custom Price */}
-                    <input
-                      type="number"
-                      placeholder="Price"
-                      className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-bold"
-                      value={item.price}
-                      onChange={(e) => handleItemFieldChange(idx, 'price', e.target.value)}
-                      required
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider">Price (Birr)</label>
+                      <input
+                        type="number"
+                        placeholder="Price"
+                        className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-bold w-full"
+                        value={item.price}
+                        onChange={(e) => handleItemFieldChange(idx, 'price', e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <button 
-                    type="button"
-                    onClick={() => handleRemoveOrderItem(idx)}
-                    className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                    disabled={orderItems.length === 1}
-                  >
-                    <X size={14} />
-                  </button>
+                  {/* Note & Sample Image Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-dashed border-secondaryClr/10">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider">Directives (Fabric, Cuffs, Style)</label>
+                      <input
+                        type="text"
+                        placeholder="Silk lapel, double breasted..."
+                        className="bg-white border border-secondaryClr/10 rounded-lg px-2 py-1.5 text-xs font-medium w-full"
+                        value={item.notes || ''}
+                        onChange={(e) => handleItemFieldChange(idx, 'notes', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-black text-secondaryClr/40 uppercase tracking-wider">Garment Reference Image</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id={`itemImageUpload-${idx}`}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => handleItemFieldChange(idx, 'sampleImage', reader.result);
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <label 
+                          htmlFor={`itemImageUpload-${idx}`}
+                          className="cursor-pointer bg-primaryClr/5 hover:bg-primaryClr/10 text-primaryClr text-[10px] font-bold px-3 py-1.5 rounded-lg border border-primaryClr/20 transition-colors whitespace-nowrap"
+                        >
+                          Upload Image
+                        </label>
+                        {item.sampleImage && (
+                          <div className="relative group/preview">
+                            <img src={item.sampleImage} alt="Preview" className="h-8 w-8 object-cover rounded-lg border border-primaryClr/20 shadow-sm" />
+                            <button 
+                              type="button" 
+                              onClick={() => handleItemFieldChange(idx, 'sampleImage', '')}
+                              className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/preview:opacity-100 transition-opacity hover:bg-red-600 shadow-sm"
+                            >
+                              <X size={8} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -879,17 +947,6 @@ const OfficerDashboard = ({ user, hideHeader = false }) => {
               </select>
             </div>
           )}
-
-          <div>
-            <label className="block text-xs font-black text-primaryClr/40 uppercase tracking-widest mb-2">Order Notes</label>
-            <textarea
-              rows="2"
-              className="w-full bg-primaryClr/5 border-0 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primaryClr/20"
-              placeholder="Special instructions, fabrics choices, complex cuffs..."
-              value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
-            />
-          </div>
 
           {/* Form Actions */}
           <div className="pt-4 flex gap-3">

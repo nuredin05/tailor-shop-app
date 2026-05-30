@@ -12,12 +12,14 @@ import UsersPage from './pages/UsersPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import LandingPage from './pages/LandingPage'
 import AdminRoute from './components/AdminRoute'
 import Chatbot from './components/Chatbot'
 import RoleRoute from './components/RoleRoute'
 import CustomersPage from './pages/CustomersPage'
 import PricingPage from './pages/PricingPage'
 import ExpensesPage from './pages/ExpensesPage'
+import ReportsPage from './pages/ReportsPage'
 
 function App() {
   return (
@@ -26,7 +28,7 @@ function App() {
       <DarkModeProvider>
         <AuthProvider>
           <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -92,8 +94,20 @@ function App() {
             }
           />
 
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['manager', 'admin', 'superadmin']}>
+                  <Layout>
+                    <ReportsPage />
+                  </Layout>
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Placeholder Routes for Regular Users */}
+
           {['register-student', 'students', 'review-incidents', 'rewards', 'school-structure'].map(path => (
             <Route
               key={path}
